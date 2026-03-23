@@ -5,41 +5,47 @@ import Image from "next/image";
 import Link from "next/link";
 import Input from "../../components/Input";
 import Button from "../../components/Button";
-import { loginUser } from "../../utils/auth";
 import Footer from "../../components/Footer";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
+    // Simulação de cadastro simplificado
     setTimeout(() => {
-      if (loginUser(email, password)) {
-        router.push("/dashboard");
+      if (email && password) {
+        if (password.length < 6) {
+          setError("A senha deve ter pelo menos 6 caracteres.");
+          setIsLoading(false);
+          return;
+        }
+        console.log("Usuário registrado:", { email });
+        router.push("/login"); 
       } else {
-        setError("E-mail ou senha inválidos.");
+        setError("Preencha todos os campos corretamente.");
         setIsLoading(false);
       }
-    }, 800);
+    }, 1000);
   };
 
   return (
     <main className="min-h-screen bg-login-image flex flex-col items-center justify-center p-4 font-sans">
-    
-      <div className="relative w-full max-w-sm mt-20">
+      
+      <div className="relative w-full max-w-sm mt-20 mb-10">
         
-        {/* Header do Card com o Logo */}
+        {/* Header do Card (Identidade 17º BPM) */}
         <header className="card-header-floating">
           <Image 
             src="/assets/image/bg-profile.png" 
-            alt="Sistema Gestão Interna Logo"
+            alt="Logo"
             width={80}
             height={80}
             className="logo-style"
@@ -48,6 +54,10 @@ export default function LoginPage() {
         </header>
 
         <div className="bg-white rounded-xl shadow-2xl p-8 pt-32">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-bold text-slate-700">Nova Conta</h2>
+            <p className="text-xs text-slate-500">Crie seu acesso com e-mail e senha</p>
+          </div>
           
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 p-2 mb-6 animate-shake">
@@ -55,7 +65,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4">
             <Input 
               label="E-mail" 
               type="email" 
@@ -68,41 +78,31 @@ export default function LoginPage() {
             <Input 
               label="Senha" 
               type="password" 
-              placeholder="Digite sua senha..."
+              placeholder="Crie uma senha..."
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
               required
             />
             
-            <div className="flex items-center gap-2 py-2">
-              <input 
-                type="checkbox" 
-                id="remember" 
-                className="w-4 h-4 rounded border-gray-300 accent-blue-600 cursor-pointer transition-all" 
+            <div className="pt-2">
+              <Button 
+                text={isLoading ? "Criando conta..." : "Registrar"} 
+                type="submit" 
+                disabled={isLoading}
               />
-              <label htmlFor="remember" className="text-sm text-slate-500 font-medium cursor-pointer select-none hover:text-slate-700">
-                Lembrar-me
-              </label>
             </div>
-
-            <Button 
-              text={isLoading ? "Autenticando..." : "Entrar"} 
-              type="submit" 
-              disabled={isLoading}
-            />
             
             <footer className="text-center text-sm text-slate-500 pt-4">
-              Não tem uma conta?{" "}
-              <Link href="/register" className="text-blue-500 font-bold cursor-pointer hover:underline decoration-2">
-                Cadastre-se
+              Já tem cadastro?{" "}
+              <Link href="/login" className="text-blue-500 font-bold hover:underline decoration-2">
+                Voltar ao Login
               </Link>
             </footer>
           </form>
         </div>
       </div>
 
-      {/* Rodapé da Página */}
-      <footer className="absolute bottom-0 w-full">
+      <footer className="mt-auto w-full">
         <Footer />
       </footer>
     </main>
