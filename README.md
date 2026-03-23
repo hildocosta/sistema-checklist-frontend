@@ -21,29 +21,75 @@ Construído com **Next.js 15** e **React 19**, o sistema entrega uma experiênci
 
 ---
 
+## 📸 Demonstração da Interface (Visual Preview)
+
+<p align="center">
+  Abaixo, apresentamos os fluxos principais já implementados. Toda a interface utiliza **dados simulados (Mock Data)** para validar a usabilidade antes da integração com o banco de dados.
+</p>
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33.33%" valign="top" style="padding: 10px;">
+      <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <p align="center">
+          <img src="https://img.shields.io/badge/🔐-Login-blue?style=flat&logoColor=white" alt="Login Icon" />
+        </p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-top: 5px; margin-bottom: 15px; min-height: 25px;">
+          Validando credenciais de forma segura.
+        </p>
+        <img src="./screenshots/login.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" alt="Tela de Login" />
+      </div>
+    </td>
+    <td width="33.33%" valign="top" style="padding: 10px;">
+      <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <p align="center">
+          <img src="https://img.shields.io/badge/📝-Cadastro-emerald?style=flat&logoColor=white" alt="Register Icon" />
+        </p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-top: 5px; margin-bottom: 15px; min-height: 25px;">
+          Fluxo de registro de novos operadores.
+        </p>
+        <img src="./screenshots/cadastrar.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" alt="Tela de Cadastro" />
+      </div>
+    </td>
+    <td width="33.33%" valign="top" style="padding: 10px;">
+      <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <p align="center">
+          <img src="https://img.shields.io/badge/📊-Dashboard-orange?style=flat&logoColor=white" alt="Dashboard Icon" />
+        </p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-top: 5px; margin-bottom: 15px; min-height: 25px;">
+          Visão geral com gráficos e indicadores.
+        </p>
+        <img src="./screenshots/dashboard.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" alt="Dashboard Geral" />
+      </div>
+    </td>
+  </tr>
+</table>
+
+---
+
 ## 🏗️ Estratégia de Desenvolvimento (MVP)
 
 O projeto adota uma metodologia **Frontend-First**, priorizando a validação da experiência do usuário e a arquitetura visual:
 
 - **Foco em UI/UX:** Interface de alta fidelidade, desenvolvida para ser limpa, moderna e funcional.
 - **Simulação de Dados (Mock Data):** Para validar a navegabilidade e as regras de negócio de forma ágil, o sistema utiliza dados simulados. Isso permite testar toda a jornada do usuário antes da integração definitiva com o banco de dados.
-- **Prototipagem Funcional:** Estados de clique, fluxos de navegação e transições já estão totalmente operacionais, aguardando apenas o acoplamento da camada de serviços (API).
+- **Prototipagem Funcional:** Estados de clique, fluxos de navegação e transições já estão totalmente operacionais.
 
 ---
 
 ## 🚀 Status do Desenvolvimento
 
 ### ✅ Já Implementado
-- **Módulo de Acesso:** Telas de Login e Cadastro com validação de formulários e estados de espera.
-- **Navegação Inteligente:** Menu lateral dinâmico com reconhecimento de página ativa e indicadores visuais.
-- **Design System:** Padronização de componentes (botões, inputs e cards) via Tailwind CSS.
-- **Gestão de Sessão:** Fluxo de saída de usuário (Logout) com transições suaves e redirecionamento.
+- **Módulo de Acesso:** Telas de Login e Cadastro com validação de formulários.
+- **Navegação Inteligente:** Menu lateral dinâmico com reconhecimento de página ativa.
+- **Design System:** Padronização de componentes via Tailwind CSS.
+- **Gestão de Sessão:** Fluxo de saída (Logout) com transições suaves.
 
 ### 📈 Roadmap (Próximas Etapas)
-1.  **📊 Painel de Indicadores (Dashboard):** Visualização de métricas e estatísticas em tempo real.
-2.  **🔧 Central de Serviços:** Gerenciamento de solicitações, chamados e ordens de trabalho.
+1.  **📊 Painel de Indicadores:** Visualização de métricas e estatísticas em tempo real.
+2.  **🔧 Central de Serviços:** Gerenciamento de solicitações e chamados técnicos.
 3.  **👥 Gestão de Equipe:** Controle de perfis de usuários e níveis de permissão.
-4.  **📄 Relatórios Gerenciais:** Exportação de dados consolidados em formatos PDF e Excel.
+4.  **📄 Relatórios Gerenciais:** Exportação de dados consolidados em PDF e Excel.
 
 ---
 
