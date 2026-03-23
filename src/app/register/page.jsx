@@ -37,7 +37,7 @@ export default function RegisterPage() {
   return (
     <main className="h-screen w-full bg-login-image flex flex-col items-center justify-between font-sans overflow-hidden">
       
-      {/* Ajustado: pt-20 para manter a mesma altura da LoginPage */}
+      
       <div className="flex-1 flex items-start justify-center w-full p-4 pt-20">
         <div className="relative w-full max-w-sm">
           
