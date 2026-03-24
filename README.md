@@ -121,6 +121,30 @@ Nossa solução transformou essa planilha em um **Painel de Controle Inteligente
       </div>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top" style="padding: 10px;">
+      <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <p align="center">
+          <img src="https://img.shields.io/badge/📩-Solicitações-blue?style=flat&logoColor=white" alt="Requests Icon" />
+        </p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-top: 5px; margin-bottom: 15px; min-height: 25px;">
+          Gerenciamento de chamados e ordens de serviço operacionais.
+        </p>
+        <img src="./screenshots/tela_solicitacoes.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" alt="Tela de Solicitações" />
+      </div>
+    </td>
+    <td width="50%" valign="top" style="padding: 10px;">
+      <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <p align="center">
+          <img src="https://img.shields.io/badge/⚡-Novo_Chamado-cyan?style=flat&logoColor=white" alt="Modal Call Icon" />
+        </p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-top: 5px; margin-bottom: 15px; min-height: 25px;">
+          Modal de abertura rápida com vínculo direto à planilha master.
+        </p>
+        <img src="./screenshots/modal_abrir_chamado_tela_solicitacoes.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" alt="Modal de Novo Chamado" />
+      </div>
+    </td>
+  </tr>
 </table>
 
 ## 🏗️ Estratégia de Desenvolvimento (MVP)
@@ -142,6 +166,7 @@ O projeto adota uma metodologia **Frontend-First**, priorizando a validação da
 * **Gestão de Usuários & Serviços:** Interface unificada para cadastro de efetivo e itens de manutenção.
 * **Painel de Indicadores:** Visualização de métricas e estatísticas em tempo real (Dashboard).
 * **Central de Serviços:** Tabela dinâmica para gerenciamento de solicitações e prazos de manutenção.
+* **Central de Solicitações:** Tabela dinâmica para gerenciamento de chamados operacionais e ordens de serviço.
 * **UX Polida:** Feedback visual de sucesso (Toasts), transições de entrada e cursor interativo em toda a aplicação.
 * **Gestão de Sessão:** Fluxo de saída (Logout) com transições suaves.
 
