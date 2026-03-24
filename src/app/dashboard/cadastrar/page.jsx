@@ -31,8 +31,8 @@ export default function CadastrarPage() {
 
       {/* --- CABEÇALHO --- */}
       <div>
-        <nav className="text-xs text-slate-400 font-light mb-1">
-          Dashboard / <span className="text-slate-600 font-normal">Cadastrar</span>
+         <nav className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mb-1">
+          Dashboard /<span className="text-blue-600">Cadastrar</span>
         </nav>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight">Novo Registro</h1>
         <p className="text-xs text-slate-400 mt-1 italic">Selecione a categoria para adicionar ao sistema do 17º BPM.</p>
