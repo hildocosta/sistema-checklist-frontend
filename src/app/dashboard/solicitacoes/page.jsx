@@ -15,6 +15,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import Breadcrumb from "../../../components/Breadcrumb";
+import ActionButton from "../../../components/ActionButton";
 
 const solicitacoesBaseadasNaPlanilha = [
   { 
@@ -78,12 +79,12 @@ export default function SolicitacoesPage() {
     </h1>
   </div>
 
-        <button 
+ {/* --- BOTÃO DE AÇÃO PRINCIPAL --- */}
+      <ActionButton 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-linear-to-tr from-[#1a73e8] to-[#63a4ff] text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/25 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer"
-        >
-          <Plus size={16} strokeWidth={3} /> Abrir Chamado
-        </button>
+          icon={Plus} 
+          label="Abrir Chamado"
+        />
       </div>
 
       {/* --- TABELA COM CORES FIXAS NAS AÇÕES --- */}

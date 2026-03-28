@@ -5,6 +5,7 @@ import {
   Award, CheckCircle2, Loader2, X, UserPlus, Hash
 } from "lucide-react";
 import Breadcrumb from "../../../components/Breadcrumb";
+import ActionButton from "../../../components/ActionButton";
 
 export default function PerfilPage() {
   // Estado para os dados do militar logado
@@ -131,12 +132,12 @@ export default function PerfilPage() {
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">Configurações de Conta</h1>
         </div>
 
-        <button 
-          onClick={() => setShowModalMilitar(true)}
-          className="flex items-center gap-2 bg-linear-to-tr from-[#1a73e8] to-[#63a4ff] text-white px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/25 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer"
-        >
-          <UserPlus size={16} /> Cadastrar Militar
-        </button>
+         {/* --- BOTÃO DE AÇÃO PRINCIPAL --- */}
+              <ActionButton 
+                  onClick={() => setShowModalMilitar(true)}
+                  icon={UserPlus} 
+                  label="Adicionar Serviço"
+                />
       </div>
 
       {/* --- CONTEÚDO PRINCIPAL --- */}

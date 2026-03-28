@@ -5,6 +5,7 @@ import {
   Mail, Trash2, Edit, Filter, X, Shield,
   } from "lucide-react";
 import Breadcrumb from "../../../components/Breadcrumb";
+import ActionButton from "../../../components/ActionButton";
 
 const usuariosIniciais = [
   { id: 1, nome: "Anderson Silva", posto: "1º Sargento", re: "123.456-7", email: "sargento.silva@pm.pr.gov.br", nivel: "Admin", status: "Ativo" },
@@ -40,13 +41,13 @@ export default function UsuariosPage() {
           </h1>
         </div>
 
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-linear-to-tr from-[#1a73e8] to-[#63a4ff] text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase shadow-lg shadow-blue-500/20 hover:scale-103 transition cursor-pointer active:scale-95"
-        >
-          <UserPlus size={16} /> Cadastrar Militar
-        </button>
-      </div>
+       {/* --- BOTÃO DE AÇÃO PRINCIPAL --- */}
+             <ActionButton 
+              onClick={() => setIsModalOpen(true)}
+              icon={UserPlus}                      
+              label="Adicionar Usuário"
+              />
+        </div>
 
       {/* --- CARDS DE RESUMO --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

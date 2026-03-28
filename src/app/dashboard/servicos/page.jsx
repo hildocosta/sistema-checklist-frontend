@@ -5,6 +5,7 @@ import {
   Plus, Filter, FileText, X, ArrowRight, AlertCircle, Settings,
   } from "lucide-react";
 import Breadcrumb from "../../../components/Breadcrumb";
+import ActionButton from "../../../components/ActionButton";
 
 const servicosPlanilha = [
   { id: "01", servico: "Limpeza de Caixa D'Água", periodicidade: "12 meses", ultima: "07/11/2024", proxima: "07/11/2025", status: "Atrasada" },
@@ -101,13 +102,13 @@ export default function ServicosPage() {
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">Controle de Serviços - 17º BPM</h1>
         </div>
 
-        <button 
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-linear-to-tr from-[#1a73e8] to-[#63a4ff] text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer"
-        >
-          <Plus size={16} strokeWidth={3} /> Adicionar Serviço
-        </button>
-      </div>
+        {/* --- BOTÃO DE AÇÃO PRINCIPAL --- */}
+              <ActionButton 
+                  onClick={() => setShowModal(true)}
+                  icon={Plus} 
+                  label="Adicionar Serviço"
+                />
+        </div>
 
       {/* --- CARDS DE INDICADORES --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
