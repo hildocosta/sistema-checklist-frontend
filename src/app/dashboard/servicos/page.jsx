@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { 
   Calendar, AlertTriangle, CheckCircle2, Clock, Search, 
-  Plus, Filter, FileText, X, ArrowRight, AlertCircle, Settings
+  Plus, Filter, FileText, X, ArrowRight, AlertCircle, Settings,
+  ChevronRight
 } from "lucide-react";
 
 const servicosPlanilha = [
@@ -25,13 +26,13 @@ export default function ServicosPage() {
       
       {/* --- JANELA FLUTUANTE (MODAL) DE CADASTRO --- */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
           
           <div className="relative bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-300">
             <div className="p-8">
               <div className="flex justify-between items-start mb-10">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 text-left">
                   <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Settings size={20} /></div>
                   <div>
                     <h2 className="text-xl font-bold text-slate-800 tracking-tight">Novo Item de Manutenção</h2>
@@ -43,17 +44,15 @@ export default function ServicosPage() {
                 </button>
               </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); setShowModal(false); }} className="space-y-8 animate-in slide-in-from-bottom-4">
+              <form onSubmit={(e) => { e.preventDefault(); setShowModal(false); }} className="space-y-8 animate-in slide-in-from-bottom-4 text-left">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                  {/* Descrição */}
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Descrição do Serviço</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Descrição do Serviço</label>
                     <input required type="text" placeholder="Ex: Manutenção Preventiva Freezer" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-normal"/>
                   </div>
 
-                  {/* Periodicidade */}
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Periodicidade</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Periodicidade</label>
                     <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-slate-700">
                       <option>Mensal</option>
                       <option>Trimestral</option>
@@ -62,20 +61,17 @@ export default function ServicosPage() {
                     </select>
                   </div>
 
-                  {/* Data Última Execução */}
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Data da Última Execução</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Data da Última Execução</label>
                     <input type="date" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-600 font-bold uppercase"/>
                   </div>
 
-                  {/* Vínculo OPM */}
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Vínculo OPM / Setor</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Vínculo OPM / Setor</label>
                     <input type="text" placeholder="Ex: Rancho / Estante de Tiro" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-normal"/>
                   </div>
                 </div>
                 
-                {/* Info Alert */}
                 <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 flex gap-4">
                   <div className="bg-white p-1.5 rounded-lg shadow-sm self-start">
                     <AlertCircle className="text-amber-500" size={18} />
@@ -96,11 +92,14 @@ export default function ServicosPage() {
         </div>
       )}
 
-      {/* --- CABEÇALHO --- */}
+      {/* --- CABEÇALHO (COM BREADCRUMB OPÇÃO 1) --- */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <nav className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mb-1">
-            Dashboard /  <span className="text-blue-600">Manutenção</span>
+          <nav className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 backdrop-blur-md border border-slate-200/60 rounded-full mb-3 shadow-sm shadow-slate-200/10">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.15em]">Dashboard</span>
+            <ChevronRight size={10} className="text-slate-300 mx-0.5" />
+            <span className="text-[9px] text-blue-600 font-black uppercase tracking-[0.15em]">Manutenção</span>
           </nav>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">Controle de Serviços - 17º BPM</h1>
         </div>
@@ -130,7 +129,7 @@ export default function ServicosPage() {
       </div>
 
       {/* --- TABELA --- */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-4 bg-slate-50/30 flex justify-between items-center border-b border-slate-100">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />

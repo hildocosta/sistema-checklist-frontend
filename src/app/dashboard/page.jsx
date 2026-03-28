@@ -1,5 +1,5 @@
 "use client";
-import { FileText, AlertTriangle, Clock, TrendingUp } from "lucide-react";
+import { FileText, AlertTriangle, Clock, TrendingUp, ChevronRight } from "lucide-react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell 
 } from 'recharts';
@@ -14,18 +14,28 @@ const dadosGrafico = [
 export default function DashboardPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Título da Seção */}
-      <nav className="mb-8">
-        <p className="text-xs text-slate-400 font-light uppercase tracking-widest">SISTEMA OPERACIONAL / 17º BPM</p>
-        <h1 className="text-slate-800 font-bold text-2xl tracking-tight">Visão Geral</h1>
-      </nav>
+      
+      {/* --- CABEÇALHO COM BREADCRUMB PADRONIZADO --- */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <nav className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 backdrop-blur-md border border-slate-200/60 rounded-full mb-3 shadow-sm shadow-slate-200/10">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-[9px] text-blue-600 font-black uppercase tracking-[0.15em]">Dashboard</span>
+            <ChevronRight size={10} className="text-slate-300 mx-0.5" />
+            <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.15em]">Visão Geral</span>
+          </nav>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+            Painel de Controle Operacional
+          </h1>
+        </div>
+      </div>
 
-      {/* Grid de Cards de Estatísticas */}
+      {/* --- GRID DE CARDS DE ESTATÍSTICAS --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         
         {/* Card: SERVIÇOS ATRASADOS */}
-        <div className="relative bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-          <div className="absolute -top-4 left-4 w-12 h-12 bg-linear-to-tr from-red-600 to-red-400 rounded-xl shadow-lg shadow-red-500/30 flex items-center justify-center text-white">
+        <div className="relative bg-white p-4 rounded-2xl shadow-sm border border-slate-100 group hover:border-red-100 transition-colors">
+          <div className="absolute -top-4 left-4 w-12 h-12 bg-linear-to-tr from-red-600 to-red-400 rounded-xl shadow-lg shadow-red-500/30 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
             <AlertTriangle size={24} />
           </div>
           <div className="text-right pt-2">
@@ -40,8 +50,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Card: EM ALERTA */}
-        <div className="relative bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-          <div className="absolute -top-4 left-4 w-12 h-12 bg-linear-to-tr from-amber-500 to-orange-400 rounded-xl shadow-lg shadow-amber-500/30 flex items-center justify-center text-white">
+        <div className="relative bg-white p-4 rounded-2xl shadow-sm border border-slate-100 group hover:border-amber-100 transition-colors">
+          <div className="absolute -top-4 left-4 w-12 h-12 bg-linear-to-tr from-amber-500 to-orange-400 rounded-xl shadow-lg shadow-amber-500/30 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
             <Clock size={24} />
           </div>
           <div className="text-right pt-2">
@@ -56,8 +66,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Card: CHAMADOS ABERTOS */}
-        <div className="relative bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-          <div className="absolute -top-4 left-4 w-12 h-12 bg-linear-to-tr from-blue-600 to-blue-400 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center text-white">
+        <div className="relative bg-white p-4 rounded-2xl shadow-sm border border-slate-100 group hover:border-blue-100 transition-colors">
+          <div className="absolute -top-4 left-4 w-12 h-12 bg-linear-to-tr from-blue-600 to-blue-400 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
             <FileText size={24} />
           </div>
           <div className="text-right pt-2">
@@ -73,12 +83,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Seção de Gráficos */}
+      {/* --- SEÇÃO DE GRÁFICOS --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Gráfico de Barras */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 border border-slate-100">
-          <div className="mb-6">
+        <div className="bg-white rounded-3xl shadow-sm p-8 border border-slate-100">
+          <div className="mb-8 text-left">
             <h2 className="text-slate-800 font-bold text-sm uppercase tracking-wider">Status das Manutenções</h2>
             <p className="text-xs text-slate-400">Distribuição baseada na periodicidade da planilha</p>
           </div>
@@ -96,9 +106,9 @@ export default function DashboardPage() {
                 <YAxis hide />
                 <Tooltip 
                   cursor={{fill: '#f8fafc'}}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                 />
-                <Bar dataKey="valor" radius={[6, 6, 0, 0]} barSize={40}>
+                <Bar dataKey="valor" radius={[8, 8, 0, 0]} barSize={45}>
                   {dadosGrafico.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
@@ -108,25 +118,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Card Informativo com Linear Gradient */}
-        <div className="bg-linear-to-br from-slate-800 to-slate-900 rounded-3xl p-8 text-white relative overflow-hidden flex flex-col justify-between">
+        {/* Card Informativo Premium */}
+        <div className="bg-linear-to-br from-slate-800 to-slate-950 rounded-3xl p-8 text-white relative overflow-hidden flex flex-col justify-between text-left shadow-xl">
            <div className="relative z-10">
-              <h2 className="text-xl font-bold mb-2">Resumo Operacional</h2>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Atualmente, <strong>68%</strong> dos serviços do 17º BPM requerem atenção ou atualização de dados no sistema.
+              <h2 className="text-xl font-bold mb-3">Resumo Operacional</h2>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+                Atualmente, <strong className="text-white text-lg">68%</strong> dos serviços do 17º BPM requerem atenção ou atualização de dados no sistema.
               </p>
            </div>
            
-           <div className="mt-8 flex gap-4">
-              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/5">
-                <p className="text-[10px] uppercase font-bold text-blue-300 mb-1 tracking-widest">Próximo Vencimento</p>
-                <p className="text-xs font-medium">Dedetização Geral</p>
-                <p className="text-[10px] text-slate-400">12/03/2026</p>
+           <div className="mt-8 flex gap-4 relative z-10">
+              <div className="bg-white/5 p-4 rounded-2xl backdrop-blur-md border border-white/10 grow">
+                <p className="text-[10px] uppercase font-bold text-blue-400 mb-1 tracking-widest">Próximo Vencimento Crítico</p>
+                <p className="text-sm font-bold text-slate-100">Dedetização Geral</p>
+                <p className="text-xs text-slate-400 mt-1">12 de Março, 2026</p>
               </div>
            </div>
 
-           {/* Círculo decorativo */}
-           <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
+           {/* Detalhes decorativos de UI */}
+           <div className="absolute -bottom-16 -right-16 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div>
+           <div className="absolute top-0 right-0 p-8 opacity-10">
+              <TrendingUp size={120} />
+           </div>
         </div>
       </div>
     </div>
