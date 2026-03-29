@@ -1,4 +1,4 @@
-# 🛡️ Sistema de Gestão Interna - 17º BPM
+# 🛡️ Sistema de Checklist Digital - 17º BPM
 
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js%2015-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js" />
@@ -8,46 +8,47 @@
 </p>
 
 <p align="center">
-  <strong>Plataforma inteligente para otimização de fluxos administrativos e controle operacional do 17º Batalhão de Polícia Militar.</strong>
+  <strong>Otimização de fluxos de conferência e logística da Furrielação do 17º Batalhão de Polícia Militar.</strong>
 </p>
 
 ---
 
-## 📖 Sobre o Projeto: De Planilhas para Performance Digital
+## 📖 Sobre o Projeto: Do Papel para Performance Digital
 
-O **Sistema de Gestão Interna - 17º BPM** nasceu da necessidade de modernizar processos que dependiam de fluxos manuais e planilhas descentralizadas (Google Sheets). O projeto elimina o risco de inconsistência de dados e entrega uma interface intuitiva, rápida e focada na experiência do militar.
+O **Sistema de Checklist Digital** foi idealizado para sanar um gargalo operacional na **Furrielação do 17º BPM**. Atualmente, a conferência de itens é realizada através de formulários físicos impressos, o que gera um fluxo burocrático e oneroso.
 
-### 🔄 A Grande Transformação
-* **Indicadores Visuais (KPIs):** Status instantâneo de serviços (Atrasados, Alerta, Em Dia).
-* **Automação de Prazos:** Cálculo automático da próxima execução baseado na periodicidade.
-* **Busca Dinâmica:** Filtros avançados para localização imediata de itens e manutenções.
+### 📉 O Processo Atual
+
+* **Consumo de Papel:** São impressas 02 cópias por turno (Diurno e Noturno) para conferência de carga.
+* **Logística Física:** Após o preenchimento manual, as cópias devem ser entregues fisicamente ao almoxarifado.
+* **Gestão de Arquivo:** O armazenamento físico dificulta a consulta rápida de históricos de avarias ou responsabilidades.
+
+### 🚀 A Transformação Digital
+Este projeto substitui o checklist físico por uma interface digital responsiva. O Furriel realiza a conferência em tempo real e, ao concluir, os dados são disponibilizados instantaneamente para o almoxarifado, eliminando o papel e agilizando a conferência de carga.
 
 ---
 
-## 🏗️ Arquitetura de Software
+## 🏗️ Arquitetura e Design Sênior
 
 O sistema adota uma metodologia **Frontend-First** baseada em uma robusta **Arquitetura de Componentes Reutilizáveis**, garantindo escalabilidade e rigor visual.
 
-### 🧩 Componentização Customizada
-* **Estrutura:** `DataTable.jsx`, `TableActions.jsx`, `SearchInput.jsx`.
-* **Formulários (H-54px):** `Input.jsx`, `FormSelect.jsx`, `ActionButton.jsx`.
-* **Feedback:** `StatCard.jsx`, `StatusBadge.jsx`, `PermissionBadge.jsx`.
-* **Layout:** `Sidebar.jsx`, `Modal.jsx`, `Card.jsx`, `Footer.jsx`.
+### 🧩 Destaques Técnicos
+* **Dashboard Analítico:** Painel com indicadores de prontidão operacional e alertas de avarias.
+* **Checklist Mobile-First:** Interface otimizada para web, tablets e smartphones, facilitando a conferência no pátio ou reserva de armas.
+* **Relatórios Inteligentes:** Conversão automática de checklists finalizados em documentos oficiais.
 
 ---
 
-## 📸 Demonstração da Transição Digital
+## 📸 Demonstração da Transição Operacional
 
-### 🚩 O Ponto de Partida (Legacy)
-Antes do sistema, a gestão era realizada através de planilhas, o que dificultava o controle de prazos e a visualização de indicadores em tempo real.
-
+### 🚩 Processo (Baseado em Papel/Planilha)
 <p align="center">
-  <img src="./screenshots/tabela controle de servicos - planilha.png" width="85%" style="border-radius: 8px; border: 1px solid #eaecef;" />
+  <img src="./screenshots/relatorio_ilustrativo.png" width="25%" style="border-radius: 8px; border: 1px solid #eaecef;" />
   <br>
-  <em>Interface anterior baseada em Google Sheets (Ponto de dor inicial).</em>
+  <em style="font-size: 11px; color: #586069;">Representação da dependência de fluxos manuais e descentralizados (imagem meramente ilustrativa).</em>
 </p>
 
-### 🚀 A Nova Interface (Visual Preview)
+### 🚀 Nova Interface Digital
 
 <table width="100%" border="0" cellspacing="0" cellpadding="0">
   <tr>
@@ -95,8 +96,8 @@ Antes do sistema, a gestão era realizada através de planilhas, o que dificulta
     <td width="50%" valign="top" style="padding: 10px;">
       <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
         <p align="center"><img src="https://img.shields.io/badge/📊-Dashboard-orange?style=flat" /></p>
-        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Visão geral com indicadores de manutenção (StatCards).</p>
-        <img src="./screenshots/dashboard.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
+        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Visão geral com indicadores de prontidão operacional e alertas (StatCards).</p>
+        <img src="./screenshots/dashboard-checklist.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
       </div>
     </td>
   </tr>
@@ -104,50 +105,50 @@ Antes do sistema, a gestão era realizada através de planilhas, o que dificulta
   <tr>
     <td width="50%" valign="top" style="padding: 10px;">
       <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-        <p align="center"><img src="https://img.shields.io/badge/⚙️-Novo_Serviço-amber?style=flat" /></p>
-        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Gestão de manutenções preventivas e periódicas.</p>
-        <img src="./screenshots/cadastrar_servico.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
+        <p align="center"><img src="https://img.shields.io/badge/⚙️-Novo_Checklist-amber?style=flat" /></p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Interface de conferência rápida de itens.</p>
+        <img src="./screenshots/tela-checklist.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
       </div>
     </td>
     <td width="50%" valign="top" style="padding: 10px;">
       <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-        <p align="center"><img src="https://img.shields.io/badge/📋-Controle-darkblue?style=flat" /></p>
-        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Listagem dinâmica com componente DataTable.</p>
-        <img src="./screenshots/servicos.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
+        <p align="center"><img src="https://img.shields.io/badge/📈-Relatórios-darkblue?style=flat" /></p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Painel de exportação de dados para PDF e Excel.</p>
+        <img src="./screenshots/tela relatorio-checklist.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
       </div>
     </td>
   </tr>
 
   <tr>
-    <td width="50%" valign="top" style="padding: 10px;">
+      <td width="50%" valign="top" style="padding: 10px;">
       <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-        <p align="center"><img src="https://img.shields.io/badge/📩-Solicitações-blue?style=flat" /></p>
-        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Gerenciamento de chamados e ordens de serviço.</p>
-        <img src="./screenshots/tela_solicitacoes.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
+        <p align="center"><img src="https://img.shields.io/badge/📄-Impressão-red?style=flat" /></p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Documento timbrado pronto para arquivo oficial PDF ou Impressão.</p>
+        <img src="./screenshots/impressao-checklist.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
       </div>
     </td>
-    <td width="50%" valign="top" style="padding: 10px;">
-      <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-        <p align="center"><img src="https://img.shields.io/badge/🛠️-Interface_Modal-blueviolet?style=flat" /></p>
-        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Componente Modal unificado para inserção de dados.</p>
-        <img src="./screenshots/modal_cadastrar_servico.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
-      </div>
-    </td>
-  </tr>
-
-  <tr>
-    <td width="50%" valign="top" style="padding: 10px;">
+   <td width="50%" valign="top" style="padding: 10px;">
       <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
         <p align="center"><img src="https://img.shields.io/badge/👥-Efetivo-indigo?style=flat" /></p>
         <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Listagem de militares com PermissionBadges.</p>
         <img src="./screenshots/tela_usuario_total.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
       </div>
     </td>
-    <td width="50%" valign="top" style="padding: 10px;">
+  </tr>
+
+  <tr>
+     <td width="50%" valign="top" style="padding: 10px;">
       <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-        <p align="center"><img src="https://img.shields.io/badge/📈-Relatórios-blueviolet?style=flat" /></p>
-        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Painel de exportação de dados para PDF e Excel.</p>
-        <img src="./screenshots/tela_relatorios.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
+        <p align="center"><img src="https://img.shields.io/badge/🛠️-Interface_Modal-blueviolet?style=flat" /></p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Componente Modal unificado para inserção de dados (Cadastrar Usuário).</p>
+        <img src="./screenshots/tela_modal_novo_usuario_tela_usuarios.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
+      </div>
+    </td>
+     <td width="50%" valign="top" style="padding: 10px;">
+      <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <p align="center"><img src="https://img.shields.io/badge/👥-Perfil-blueviolet?style=flat" /></p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Interface Perfil do Usuário.</p>
+        <img src="./screenshots/perfil-checklist.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
       </div>
     </td>
   </tr>
@@ -155,9 +156,16 @@ Antes do sistema, a gestão era realizada através de planilhas, o que dificulta
   <tr>
     <td width="50%" valign="top" style="padding: 10px;">
       <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-        <p align="center"><img src="https://img.shields.io/badge/📄-Impressão-red?style=flat" /></p>
-        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Documento timbrado pronto para arquivo oficial.</p>
-        <img src="./screenshots/tela relatorio exportar pdf.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
+        <p align="center"><img src="https://img.shields.io/badge/📄-Cadastro Usuários-red?style=flat" /></p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Interface para Cadastro de Novo Usuário</p>
+        <img src="./screenshots/tela-cadastro-checklist.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
+      </div>
+    </td>
+    <td width="50%" valign="top" style="padding: 10px;">
+      <div align="center" style="border: 1px solid #eaecef; border-radius: 12px; padding: 20px; height: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <p align="center"><img src="https://img.shields.io/badge/📄-Cadastro Equipamentos-red?style=flat" /></p>
+        <p align="center" style="font-size: 11px; color: #586069; margin-bottom: 15px; min-height: 25px;">Interface para Cadastro de Novo Equipamento</p>
+        <img src="./screenshots/tela-cadastro-equipamento-checklist.png" width="100%" style="border-radius: 8px; border: 1px solid #f0f0f0;" />
       </div>
     </td>
     <td width="50%" valign="top" style="padding: 10px;">
@@ -167,30 +175,14 @@ Antes do sistema, a gestão era realizada através de planilhas, o que dificulta
 
 ---
 
-## 🚀 Status do Desenvolvimento
-
-### ✅ Já Implementado
-* **Migração de Arquitetura:** Conversão de fluxos manuais (Google Sheets) para sistema robusto e centralizado.
-* **Autenticação & Segurança:** Login, Cadastro e fluxo completo de Recuperação de Senha.
-* **Componentização Reutilizável:** Design System proprietário com foco em consistência visual (DRY).
-* **Navegação Dinâmica:** Sidebar com reconhecimento de contexto e rotas protegidas.
-* **Gestão Operacional:** Dashboard com indicadores, controle de efetivo e chamados.
-* **Exportação Profissional:** Gerador de relatórios timbrados em PDF e planilhas Excel.
-
-### 📈 Roadmap
-1. **🔗 Persistência:** Integração com banco de dados real (PostgreSQL/MongoDB).
-2. **🔔 Notificações:** Alertas via sistema e e-mail para prazos de manutenção vencidos.
-
----
-
 ## 🛠️ Stack Tecnológica
 
 | Ferramenta | Aplicação |
 | :--- | :--- |
 | **Next.js 15** | Framework Estrutural (App Router) |
-| **React 19** | Lógica de Interface e Componentização |
-| **Tailwind CSS** | Estilização Responsiva e Design System |
-| **Lucide React** | Biblioteca de Ícones Vetoriais |
+| **React 19** | Biblioteca de Interface |
+| **Tailwind CSS** | Design System e Estilização Sênior |
+| **Lucide React** | Iconografia Vetorial |
 
 ---
 
