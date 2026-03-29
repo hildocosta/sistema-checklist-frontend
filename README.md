@@ -4,6 +4,8 @@
   <img src="https://img.shields.io/badge/Next.js%2015-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js" />
   <img src="https://img.shields.io/badge/React%2019-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/Nodemailer-007ACC?style=for-the-badge&logo=nodemailer&logoColor=white" alt="Nodemailer" />
+  <img src="https://img.shields.io/badge/jsPDF-E43937?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="jsPDF" />
   <img src="https://img.shields.io/badge/Lucide_Icons-FF69B4?style=for-the-badge&logo=lucide&logoColor=white" alt="Lucide" />
 </p>
 
@@ -175,6 +177,40 @@ O sistema adota uma metodologia **Frontend-First** baseada em uma robusta **Arqu
 
 ---
 
+---
+
+## 📩 Automação de Relatórios e Fluxo de E-mail
+
+O sistema foi equipado com um **motor de envio automático**, eliminando a necessidade de anexar arquivos manualmente ou salvar PDFs em pastas locais para envio posterior.
+
+### ⚙️ Implementação do Backend (Next.js API Routes)
+Diferente de um frontend estático, este projeto utiliza **Serverless Functions** da Vercel para processar o envio de documentos de forma segura e performática:
+
+* **NodeMailer Integration:** Utilização da biblioteca `nodemailer` para comunicação via protocolo SMTP.
+* **Conversão Base64:** O PDF gerado no cliente é convertido em um fluxo de dados binários no servidor para garantir a integridade do anexo.
+* **Segurança com Variáveis de Ambiente:** As credenciais de acesso (usuário e senha) não ficam expostas no código. Elas são gerenciadas via **Environment Variables** na Vercel, utilizando criptografia de ponta a ponta.
+
+### 🛡️ Segurança e Autenticação (Gmail App Passwords)
+Para garantir a confiabilidade do envio e evitar bloqueios de segurança, o sistema utiliza:
+* **Senhas de Aplicativo:** Camada de segurança do Google que permite que o sistema envie e-mails institucionalmente sem expor a senha principal da conta.
+* **Criptografia TLS/SSL:** Garantia de que os dados do relatório trafegam de forma segura entre a Vercel e os servidores de e-mail.
+
+### 🔄 Fluxo Operacional Automatizado e Feedback
+1.  **Validação:** O sistema verifica se todos os itens da carga (Armas, Munições, Viaturas) foram conferidos.
+2.  **Geração:** O PDF é gerado em memória (lado do cliente) com o layout oficial do 17º BPM.
+3.  **Disparo:** Ao clicar em **"Finalizar Conferência Geral"**, o sistema faz o download do arquivo para o operador e, simultaneamente, dispara uma cópia oficial para o e-mail da Seção de Logística via integração SMTP.
+4.  **Confirmação:** O sistema exibe um feedback visual de sucesso e o e-mail chega na caixa de entrada com o PDF anexo.
+
+### 📸 Feedback Visual do Envio (E-mail Recebido)
+
+<p align="center">
+  <img src="./screenshots/tela-recebimento-relatorio-pdf.png" width="80%" style="border-radius: 8px; border: 1px solid #eaecef;" />
+  <br>
+  <em style="font-size: 11px; color: #586069;">Demonstração do e-mail de relatório recebido na caixa de entrada com o PDF anexo.</em>
+</p>
+
+---
+
 ## 🛠️ Stack Tecnológica
 
 | Ferramenta | Aplicação |
@@ -182,8 +218,9 @@ O sistema adota uma metodologia **Frontend-First** baseada em uma robusta **Arqu
 | **Next.js 15** | Framework Estrutural (App Router) |
 | **React 19** | Biblioteca de Interface |
 | **Tailwind CSS** | Design System e Estilização Sênior |
+| **Nodemailer** | Automação de E-mail e Integração SMTP |
+| **jsPDF** | Geração Dinâmica de Relatórios PDF |
 | **Lucide React** | Iconografia Vetorial |
-
 ---
 
 ## 👤 Desenvolvedor
