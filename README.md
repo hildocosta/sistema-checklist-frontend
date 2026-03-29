@@ -37,6 +37,7 @@ O sistema adota uma metodologia **Frontend-First** baseada em uma robusta **Arqu
 ### 🧩 Destaques Técnicos
 * **Dashboard Analítico:** Painel com indicadores de prontidão operacional e alertas de avarias.
 * **Checklist Mobile-First:** Interface otimizada para web, tablets e smartphones, facilitando a conferência no pátio ou reserva de armas.
+* **Navegação Fluida (Back to Top):** Botão inteligente de retorno rápido ao topo, garantindo agilidade na alternância entre categorias em listas extensas.
 * **Relatórios Inteligentes:** Conversão automática de checklists finalizados em documentos oficiais.
 
 ---
