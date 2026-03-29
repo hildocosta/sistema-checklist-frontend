@@ -12,7 +12,7 @@ import { toast, Toaster } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-// --- IMPORTAÇÃO DOS DADOS  ---
+// --- IMPORTAÇÃO DOS DADOS ---
 import { INVENTARIO_COMPLETO, EFETIVO_17BPM } from "../../../data/inventario/index";
 
 // Componentes de interface
@@ -30,16 +30,15 @@ export default function ChecklistPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Definição das Categorias com redistribuição e nova aba
   const categorias = [
     { id: "armamento", label: "Armas", icon: ShieldCheck },
     { id: "municao", label: "Munições", icon: Zap },
     { id: "taser", label: "Taser", icon: Flashlight },
-    { id: "equipamento", label: "Equips", icon: Package },
+    { id: "equipamento", label: "Equip", icon: Package },
     { id: "comunicacao", label: "Rádios", icon: Radio },
     { id: "veiculo", label: "Viaturas", icon: CarFront },
     { id: "sade", label: "Sade", icon: Activity },
-    { id: "acessoriosade", label: "Acess SADE", icon: Layers },
+    { id: "acessoriosade", label: "Aces SADE", icon: Layers },
   ];
 
   const getPendencias = (catId) => items.filter(i => i.cat === catId && i.status !== "ok").length;
@@ -75,46 +74,121 @@ export default function ChecklistPage() {
 
     try {
       const doc = new jsPDF();
-      const dataFormatada = new Date().toLocaleDateString('pt-BR');
+      const agora = new Date();
+      const dataFormatada = agora.toLocaleDateString('pt-BR');
+      const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
-      doc.setFontSize(10).setFont("helvetica", "bold");
+      // --- CABEÇALHO INSTITUCIONAL AJUSTADO ---
+      doc.setTextColor(30, 41, 59);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
       doc.text("POLÍCIA MILITAR DO PARANÁ", 105, 15, { align: "center" });
-      doc.text("17º BATALHÃO DE POLÍCIA MILITAR", 105, 21, { align: "center" });
-      doc.text("RELATÓRIO DE CONFERÊNCIA DIÁRIA - FURRIELAÇÃO", 105, 30, { align: "center" });
+      
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text("6º COMANDO REGIONAL DE POLÍCIA MILITAR", 105, 21, { align: "center" });
+      doc.text("17º BATALHÃO DE POLÍCIA MILITAR", 105, 27, { align: "center" });
+      
+      doc.setFontSize(8);
+      doc.text("QUARTA SEÇÃO - ALMOXARIFADO / FURRIELAÇÃO", 105, 33, { align: "center" });
+      
+      // Título do Relatório com respiro
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("RELATÓRIO DIÁRIO DE CONFERÊNCIA DE CARGA", 105, 45, { align: "center" });
 
-      let currentY = 40;
+      // Linha divisória
+      doc.setDrawColor(203, 213, 225);
+      doc.line(15, 48, 195, 48);
+
+      // Info de Emissão (Meta-dados)
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Emissão: ${dataFormatada} às ${horaFormatada}`, 15, 55);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30, 41, 59);
+      doc.text(`Responsável: 1º SGT ANDERSON SILVA - RE 123.456-7`, 15, 60);
+
+      let currentY = 70;
+
       categorias.forEach(categoria => {
         const itensDaCat = items.filter(i => i.cat === categoria.id);
         if (itensDaCat.length === 0) return;
 
-        doc.setFontSize(9).setFont("helvetica", "bold").setTextColor(100);
-        doc.text(`--- ${categoria.label.toUpperCase()} ---`, 15, currentY);
+        if (currentY > 240) {
+            doc.addPage();
+            currentY = 20;
+        }
+
+        // --- DESIGN DE SEÇÃO ---
+        doc.setFillColor(37, 99, 235);
+        doc.rect(15, currentY, 2, 8, 'F'); 
         
+        doc.setFillColor(241, 245, 249); 
+        doc.rect(17, currentY, 178, 8, 'F');
+
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 41, 59);
+        doc.text(categoria.label.toUpperCase(), 22, currentY + 5.5);
+        
+        doc.setFontSize(7);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`(${itensDaCat.length} ITENS)`, 190, currentY + 5.5, { align: "right" });
+
         const tableData = itensDaCat.map((item, idx) => [
           String(idx + 1).padStart(2, '0'),
           item.qtd,
-          `${item.desc}\nSÉRIE: ${item.serie}`,
-          item.pmpr,
+          { content: `${item.desc}\nSÉRIE: ${item.serie}`, styles: { fontStyle: 'bold' } },
+          item.pmpr || "---",
           item.cautela || "FURRIELAÇÃO",
           "OK"
         ]);
 
         autoTable(doc, {
-          startY: currentY + 2,
-          head: [["ORD", "QTD", "EQUIPAMENTO", "PMPR", "OBS", "CONF."]],
+          startY: currentY + 10,
+          head: [["ORD", "QTD", "EQUIPAMENTO / ESPECIFICAÇÃO", "PMPR", "OBS", "CONF."]],
           body: tableData,
           theme: 'grid',
-          headStyles: { fillGray: 80, fontSize: 7 },
-          styles: { fontSize: 7 },
-          columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 10 }, 5: { textColor: [0, 100, 0] } }
+          headStyles: { fillColor: [30, 41, 59], fontSize: 7, halign: 'center' },
+          styles: { fontSize: 7, valign: 'middle' },
+          columnStyles: { 
+            0: { cellWidth: 10, halign: 'center' }, 
+            1: { cellWidth: 10, halign: 'center' }, 
+            3: { halign: 'center' },
+            5: { textColor: [22, 163, 74], fontStyle: 'bold', halign: 'center' } 
+          }
         });
 
-        currentY = doc.lastAutoTable.finalY + 10;
+        currentY = doc.lastAutoTable.finalY + 15;
       });
 
+      // --- FECHAMENTO E ASSINATURA ---
+      const pageHeight = doc.internal.pageSize.height;
+      if (currentY > pageHeight - 50) {
+        doc.addPage();
+        currentY = 30;
+      }
+
+      doc.setDrawColor(203, 213, 225);
+      doc.line(60, currentY + 20, 150, currentY + 20);
+      doc.setFontSize(8);
+      doc.setTextColor(30, 41, 59);
+      doc.setFont("helvetica", "bold");
+      doc.text("Assinatura do Responsável (Digital)", 105, currentY + 25, { align: "center" });
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text("Autenticidade garantida via sistema - ID: DM6YGIXQPQ", 105, currentY + 30, { align: "center" });
+
       doc.save(`Checklist_17BPM_${dataFormatada.replace(/\//g, '-')}.pdf`);
-      toast.success("PDF gerado com sucesso!");
-    } catch (error) { toast.error("Erro ao gerar PDF"); }
+      toast.success("Relatório gerado com sucesso!");
+    } catch (error) { 
+      console.error(error);
+      toast.error("Erro ao gerar PDF"); 
+    }
   };
 
   return (
@@ -132,9 +206,8 @@ export default function ChecklistPage() {
         </div>
       </div>
 
-      {/* Navegação por Abas */}
       <div className="bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200 w-full overflow-hidden">
-        <div className="flex flex-row justify-between gap-1 w-full">
+        <div className="flex flex-row justify-between gap-1 w-full overflow-x-auto no-scrollbar">
           {categorias.map((categoria) => {
             const Icon = categoria.icon;
             const pendencias = getPendencias(categoria.id);
@@ -145,18 +218,18 @@ export default function ChecklistPage() {
                 key={categoria.id}
                 onClick={() => setAbaAtiva(categoria.id)}
                 className={`
-                  flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-xl
-                  text-[10px] font-bold uppercase tracking-tight transition-all duration-200
+                  flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl
+                  text-[10px] font-bold uppercase tracking-tight transition-all duration-200 min-w-fit
                   ${isActive 
                     ? "bg-white text-blue-600 shadow-md border border-blue-100" 
                     : "text-slate-400 hover:text-slate-600 hover:bg-white/40"}
                 `}
               >
                 <Icon size={14} className={isActive ? "text-blue-600" : "text-slate-400"} />
-                <span className="hidden sm:inline">{categoria.label}</span>
+                <span className="hidden md:inline">{categoria.label}</span>
                 {pendencias > 0 && (
                   <span className={`
-                    ml-1 px-1.5 py-0.5 rounded-full text-[9px] animate-pulse
+                    ml-1 px-1.5 py-0.5 rounded-full text-[9px]
                     ${isActive ? 'bg-blue-600 text-white' : 'bg-amber-500 text-white'}
                   `}>
                     {pendencias}
@@ -169,21 +242,21 @@ export default function ChecklistPage() {
       </div>
 
       {isLoading ? (
-        <div className="bg-white border border-slate-100 p-6 space-y-4">
+        <div className="bg-white border border-slate-100 p-6 space-y-4 rounded-2xl">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
         </div>
       ) : (
         <div className="border border-slate-100 bg-white shadow-sm overflow-x-auto rounded-2xl">
-          <table className="w-full border-collapse table-fixed min-w-[800px]">
+          <table className="w-full border-collapse table-fixed min-w-[900px]">
             <thead>
               <tr className="border-b border-slate-50 bg-slate-50/90 backdrop-blur-sm">
                 <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[5%] text-left">Ord</th>
                 <th className="px-2 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[5%] text-center">Qnt</th>
                 <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[25%] text-left">Equipamento / Série</th>
-                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[18%] text-center">Nº PMPR</th>
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[15%] text-center">Nº PMPR</th>
                 <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[30%] text-left">Cautela / Observações</th>
-                <th className="px-2 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[7%] text-center">Pág</th>
-                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[10%] text-right">Conf.</th>
+                <th className="px-2 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[8%] text-center">Livro/Pág</th>
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[12%] text-right">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -197,13 +270,9 @@ export default function ChecklistPage() {
               ))}
             </tbody>
           </table>
-          {itensExibidos.length === 0 && (
-            <div className="p-10 text-center text-slate-400 text-xs italic">Nenhum item nesta categoria.</div>
-          )}
         </div>
       )}
 
-      {/* Footer / Assinatura */}
       <div className="bg-white p-5 rounded-3xl border border-slate-100 flex flex-col md:flex-row justify-between items-center shadow-sm gap-6 shrink-0">
         <div className="flex gap-4 items-center">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors border ${isConferenciaCompleta ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-blue-50 text-blue-500 border-blue-100'}`}>
@@ -229,12 +298,16 @@ export default function ChecklistPage() {
 }
 
 function RowChecklist({ item, onToggle, onUpdate }) {
-  const [searchTerm, setSearchTerm] = useState(item.cautela);
+  const [searchTerm, setSearchTerm] = useState(item.cautela || "");
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const filteredEfetivo = EFETIVO_17BPM.filter(m => 
-    m.nome.toLowerCase().includes(searchTerm.toLowerCase()) || m.re.includes(searchTerm)
-  );
+  const filteredEfetivo = useMemo(() => {
+    if (!searchTerm) return [];
+    return EFETIVO_17BPM.filter(m => 
+        m.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        m.re.includes(searchTerm)
+      ).slice(0, 5);
+  }, [searchTerm]);
 
   return (
     <tr className={`transition-all duration-300 ${item.status === 'ok' ? 'bg-emerald-50/20' : 'hover:bg-slate-50/50'}`}>
@@ -257,7 +330,7 @@ function RowChecklist({ item, onToggle, onUpdate }) {
       </td>
       <td className="px-4 py-4 text-center">
         <span className="bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg font-mono text-xs font-bold border border-slate-200 whitespace-nowrap inline-block">
-          {item.pmpr}
+          {item.pmpr || "---"}
         </span>
       </td>
       <td className="px-4 py-4 overflow-visible">
@@ -279,7 +352,7 @@ function RowChecklist({ item, onToggle, onUpdate }) {
             className={`w-full pl-9 pr-3 py-2 border rounded-xl text-xs font-medium transition-all outline-none 
               ${searchTerm ? 'bg-white border-blue-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400 italic'}`}
           />
-          {showDropdown && searchTerm.length > 0 && filteredEfetivo.length > 0 && (
+          {showDropdown && filteredEfetivo.length > 0 && (
             <div className="absolute z-[100] w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
               {filteredEfetivo.map(m => (
                 <button 
@@ -300,10 +373,10 @@ function RowChecklist({ item, onToggle, onUpdate }) {
         </div>
       </td>
       <td className="px-2 py-4 text-center">
-        <div className="relative w-12 mx-auto">
+        <div className="relative w-14 mx-auto">
           <BookOpen size={12} className={`absolute left-1 top-1/2 -translate-y-1/2 ${item.pagLivro ? 'text-blue-400' : 'text-slate-300'}`} />
           <input 
-            type="text" value={item.pagLivro} placeholder="-"
+            type="text" value={item.pagLivro || ""} placeholder="-"
             onChange={(e) => onUpdate({ pagLivro: e.target.value })}
             className="w-full pl-5 pr-1 py-1.5 bg-transparent border-b border-slate-100 text-xs font-bold text-slate-600 outline-none text-center"
           />

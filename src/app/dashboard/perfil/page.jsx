@@ -2,13 +2,12 @@
 import { useState, useEffect } from "react";
 import { 
   User, Mail, Shield, MapPin, Camera, Save, Lock, 
-  Award, CheckCircle2, Loader2, UserPlus, Hash
+  Award, CheckCircle2, Loader2, KeyRound 
 } from "lucide-react";
 
 // Importação dos componentes padronizados
 import Breadcrumb from "../../../components/Breadcrumb";
 import ActionButton from "../../../components/ActionButton";
-import Modal from "../../../components/Modal";
 import Skeleton from "../../../components/Skeleton";
 
 export default function PerfilPage() {
@@ -25,13 +24,9 @@ export default function PerfilPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [showModalMilitar, setShowModalMilitar] = useState(false);
 
-  // Simulação de carregamento inicial
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1200);
+    const timer = setTimeout(() => setIsLoading(false), 1200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -46,7 +41,6 @@ export default function PerfilPage() {
     setTimeout(() => {
       setIsSaving(false);
       setShowSuccess(true);
-      setShowModalMilitar(false);
       setTimeout(() => setShowSuccess(false), 3000);
     }, 1500);
   };
@@ -57,67 +51,9 @@ export default function PerfilPage() {
       {/* --- NOTIFICAÇÃO DE SUCESSO --- */}
       {showSuccess && (
         <div className="fixed top-24 right-8 z-60 animate-in slide-in-from-right-10 flex items-center gap-3 bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl shadow-emerald-500/20 font-bold text-sm">
-          <CheckCircle2 size={20} /> Operação realizada com sucesso!
+          <CheckCircle2 size={20} /> Perfil atualizado com sucesso!
         </div>
       )}
-
-      {/* --- MODAL PADRONIZADO: CADASTRAR NOVO MILITAR --- */}
-      <Modal 
-        isOpen={showModalMilitar} 
-        onClose={() => setShowModalMilitar(false)}
-        title="Cadastrar Novo Militar"
-        subtitle="Inclusão de Efetivo - 17º BPM"
-        icon={UserPlus}
-      >
-        <form onSubmit={handleSave} className="space-y-6 text-left">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Nome Completo</label>
-              <input required type="text" placeholder="Nome de Guerra ou Completo" className="w-full h-13.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-slate-700"/>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-1"><Hash size={10}/> Registro (RE)</label>
-              <input required type="text" placeholder="000.000-0" className="w-full h-13.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-mono font-bold text-slate-700"/>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Posto/Graduação</label>
-              <select className="w-full h-13.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-slate-700 cursor-pointer">
-                <option>Soldado</option>
-                <option>Cabo</option>
-                <option>3º Sargento</option>
-                <option>2º Sargento</option>
-                <option>1º Sargento</option>
-                <option>Subtenente</option>
-                <option>Oficial</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 flex items-center gap-1"><Mail size={10}/> E-mail Institucional</label>
-              <input required type="email" placeholder="militar@pm.pr.gov.br" className="w-full h-13.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-600"/>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-slate-50 flex justify-end gap-3">
-            <button 
-              type="button" 
-              onClick={() => setShowModalMilitar(false)}
-              className="px-6 py-3 text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-slate-600 transition-all cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <ActionButton 
-              type="submit"
-              disabled={isSaving}
-              icon={isSaving ? Loader2 : Save}
-              label={isSaving ? "Gravando..." : "Confirmar Cadastro"}
-              className={isSaving ? "animate-pulse" : ""}
-            />
-          </div>
-        </form>
-      </Modal>
 
       {/* --- CABEÇALHO --- */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -125,18 +61,11 @@ export default function PerfilPage() {
           <Breadcrumb itemAtual="Meu Perfil" />
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">Configurações de Conta</h1>
         </div>
-
-        <ActionButton 
-          onClick={() => setShowModalMilitar(true)}
-          icon={UserPlus} 
-          label="Adicionar Militar"
-        />
       </div>
 
-      {/* --- CONTEÚDO PRINCIPAL --- */}
       <div className="flex flex-col lg:flex-row gap-8">
         
-        {/* Card Lateral */}
+        {/* --- CARD LATERAL --- */}
         {isLoading ? (
           <Skeleton className="w-full lg:w-1/3 h-105 rounded-3xl" />
         ) : (
@@ -170,7 +99,7 @@ export default function PerfilPage() {
           </div>
         )}
 
-        {/* Formulário Principal e Segurança */}
+        {/* --- FORMULÁRIO E SEGURANÇA --- */}
         <div className="w-full lg:w-2/3 flex flex-col gap-6">
           {isLoading ? (
             <>
@@ -181,7 +110,7 @@ export default function PerfilPage() {
             <>
               <form onSubmit={handleSave} className="bg-white rounded-3xl shadow-sm border border-slate-100 p-10 grow">
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-8 flex items-center gap-2">
-                  <Award size={18} className="text-blue-600" /> Informações Profissionais
+                  <Award size={18} className="text-blue-600" /> Dados Cadastrais
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 items-end">
@@ -211,28 +140,36 @@ export default function PerfilPage() {
                     type="submit"
                     disabled={isSaving}
                     icon={isSaving ? Loader2 : Save}
-                    label={isSaving ? "Salvando..." : "Salvar Alterações"}
+                    label={isSaving ? "Salvando..." : "Atualizar Perfil"}
                   />
                 </div>
               </form>
 
-              {/* Segurança */}
+              {/* --- SEÇÃO DE SEGURANÇA COM ACTIONBUTTON --- */}
               <div className="bg-slate-950 rounded-3xl p-8 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
-                <div className="flex items-start gap-4 grow z-10">
-                   <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-md"><Lock size={20} /></div>
+                <div className="flex items-start gap-4 grow z-10 text-left">
+                   <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-md">
+                     <Lock size={20} />
+                   </div>
                    <div>
-                      <h3 className="text-sm font-bold mb-1 tracking-tight">Segurança e Autenticação</h3>
+                      <h3 className="text-sm font-bold mb-1 tracking-tight">Segurança da Conta</h3>
                       <p className="text-[11px] text-slate-400 font-light leading-relaxed max-w-sm italic">
-                        Última alteração de senha: <b className="text-white">22/02/2026</b>. Mantenha seus dados sempre protegidos.
+                        Última alteração de senha: <b className="text-white">22/02/2026</b>. Recomendamos a troca a cada 90 dias para sua proteção.
                       </p>
                    </div>
                 </div>
-                <button 
-                  type="button"
-                  className="w-full md:w-auto py-3.5 px-8 bg-white text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 transition-all shadow-xl cursor-pointer z-10 active:scale-95"
-                >
-                   Alterar Minha Senha
-                </button>
+                
+                <div className="z-10 w-full md:w-auto">
+                  <ActionButton 
+                    type="button"
+                    onClick={() => console.log("Abrir modal de senha")}
+                    icon={KeyRound}
+                    label="Alterar Minha Senha"
+                    className="w-full md:w-auto bg-white text-slate-900 hover:bg-blue-50 hover:text-blue-700 shadow-xl transition-all"
+                  />
+                </div>
+
+                {/* Efeito visual de fundo */}
                 <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all"></div>
               </div>
             </>

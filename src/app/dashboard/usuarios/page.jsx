@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { 
   UserPlus, ShieldCheck, ShieldAlert, 
-  Mail, Shield, Loader2, Save 
+  Mail, Shield, Loader2, Save, X 
 } from "lucide-react";
 
 // Importação dos Componentes Reutilizáveis
@@ -217,14 +217,16 @@ export default function UsuariosPage() {
             </div>
           </div>
 
+          {/* --- BOTÕES DE AÇÃO USANDO ACTIONBUTTON --- */}
           <div className="flex gap-4 pt-2">
-            <button 
+            <ActionButton 
               type="button" 
               onClick={() => setIsModalOpen(false)}
-              className="flex-1 py-4 border border-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-pointer hover:bg-slate-50 transition"
-            >
-              Cancelar
-            </button>
+              icon={X}
+              label="Cancelar"
+              variant="outline" // Assumindo que seu ActionButton suporte variantes, caso contrário ele usará o estilo padrão
+              className="flex-1 h-14! border-slate-100 text-slate-400 hover:bg-slate-50 transition"
+            />
             <ActionButton 
               type="submit"
               disabled={isSaving}
