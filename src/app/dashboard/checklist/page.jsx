@@ -63,7 +63,7 @@ export default function ChecklistPage() {
     toast.info("Checklist resetado com sucesso.");
   };
 
-  const gerarPDF = () => {
+  const gerarPDF = async () => {
     if (!isConferenciaCompleta) {
       toast.error("Conferência Incompleta", {
         description: "Marque todos os itens de TODAS as abas como conferidos.",
@@ -72,15 +72,15 @@ export default function ChecklistPage() {
       return;
     }
 
+    const toastId = toast.loading("Gerando e enviando relatório institucional...");
+
     try {
       const doc = new jsPDF();
       const agora = new Date();
       const dataFormatada = agora.toLocaleDateString('pt-BR');
       const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
-      // --- CABEÇALHO INSTITUCIONAL AJUSTADO ---
       doc.setTextColor(30, 41, 59);
-      
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.text("POLÍCIA MILITAR DO PARANÁ", 105, 15, { align: "center" });
@@ -93,16 +93,13 @@ export default function ChecklistPage() {
       doc.setFontSize(8);
       doc.text("QUARTA SEÇÃO - ALMOXARIFADO / FURRIELAÇÃO", 105, 33, { align: "center" });
       
-      // Título do Relatório com respiro
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
       doc.text("RELATÓRIO DIÁRIO DE CONFERÊNCIA DE CARGA", 105, 45, { align: "center" });
 
-      // Linha divisória
       doc.setDrawColor(203, 213, 225);
       doc.line(15, 48, 195, 48);
 
-      // Info de Emissão (Meta-dados)
       doc.setTextColor(100, 116, 139);
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
@@ -122,7 +119,6 @@ export default function ChecklistPage() {
             currentY = 20;
         }
 
-        // --- DESIGN DE SEÇÃO ---
         doc.setFillColor(37, 99, 235);
         doc.rect(15, currentY, 2, 8, 'F'); 
         
@@ -165,7 +161,6 @@ export default function ChecklistPage() {
         currentY = doc.lastAutoTable.finalY + 15;
       });
 
-      // --- FECHAMENTO E ASSINATURA ---
       const pageHeight = doc.internal.pageSize.height;
       if (currentY > pageHeight - 50) {
         doc.addPage();
@@ -183,11 +178,32 @@ export default function ChecklistPage() {
       doc.setTextColor(148, 163, 184);
       doc.text("Autenticidade garantida via sistema - ID: DM6YGIXQPQ", 105, currentY + 30, { align: "center" });
 
-      doc.save(`Checklist_17BPM_${dataFormatada.replace(/\//g, '-')}.pdf`);
-      toast.success("Relatório gerado com sucesso!");
+      // --- NOVA LÓGICA DE ENVIO ---
+      const pdfBase64 = doc.output('datauristring');
+      const fileName = `Checklist_17BPM_${dataFormatada.replace(/\//g, '-')}.pdf`;
+
+      const response = await fetch('/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pdfBase64,
+          fileName,
+          data: dataFormatada,
+          hora: horaFormatada
+        }),
+      });
+
+      if (response.ok) {
+        doc.save(fileName);
+        toast.success("Relatório enviado e baixado com sucesso!", { id: toastId });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro no servidor");
+      }
+
     } catch (error) { 
       console.error(error);
-      toast.error("Erro ao gerar PDF"); 
+      toast.error("Erro no processo: " + error.message, { id: toastId }); 
     }
   };
 
@@ -202,7 +218,7 @@ export default function ChecklistPage() {
         </div>
         <div className="flex gap-2">
           <ActionButton icon={RotateCcw} label="Resetar" onClick={handleReset} variant="outline" />
-          <ActionButton icon={Printer} label="Gerar PDF" onClick={gerarPDF} disabled={!isConferenciaCompleta} />
+          <ActionButton icon={Printer} label="Gerar & Enviar" onClick={gerarPDF} disabled={!isConferenciaCompleta} />
         </div>
       </div>
 
@@ -287,7 +303,7 @@ export default function ChecklistPage() {
         <ActionButton 
           icon={isConferenciaCompleta ? CheckCircle2 : AlertTriangle}
           label={isConferenciaCompleta ? "Finalizar Conferência Geral" : "Pendências em Aberto..."}
-          onClick={() => isConferenciaCompleta ? toast.success("Relatório enviado com sucesso!") : toast.error("Existem itens não conferidos.")}
+          onClick={() => isConferenciaCompleta ? gerarPDF() : toast.error("Existem itens não conferidos.")}
           disabled={!isConferenciaCompleta}
           variant={isConferenciaCompleta ? "success" : "disabled"}
           className="h-12 lg:h-14 px-10"
