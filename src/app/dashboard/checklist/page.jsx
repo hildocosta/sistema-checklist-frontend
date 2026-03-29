@@ -6,7 +6,8 @@ import {
   Search, BookOpen, AlertTriangle,
   RotateCcw, CheckCircle2, ShieldCheck,
   Zap, Package, Radio, CarFront,
-  Activity, Flashlight, Layers
+  Activity, Flashlight, Layers,
+  ChevronUp 
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import jsPDF from "jspdf";
@@ -24,11 +25,25 @@ export default function ChecklistPage() {
   const [items, setItems] = useState(INVENTARIO_COMPLETO);
   const [isLoading, setIsLoading] = useState(true);
   const [abaAtiva, setAbaAtiva] = useState("armamento");
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1200);
-    return () => clearTimeout(timer);
+    
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const categorias = [
     { id: "armamento", label: "Armas", icon: ShieldCheck },
@@ -178,7 +193,6 @@ export default function ChecklistPage() {
       doc.setTextColor(148, 163, 184);
       doc.text("Autenticidade garantida via sistema - ID: DM6YGIXQPQ", 105, currentY + 30, { align: "center" });
 
-      // --- NOVA LÓGICA DE ENVIO ---
       const pdfBase64 = doc.output('datauristring');
       const fileName = `Checklist_17BPM_${dataFormatada.replace(/\//g, '-')}.pdf`;
 
@@ -208,9 +222,20 @@ export default function ChecklistPage() {
   };
 
   return (
-    <div className="animate-in fade-in duration-700 space-y-6 max-w-full mx-auto p-4 flex flex-col">
+    <div className="animate-in fade-in duration-700 space-y-6 max-w-full mx-auto p-4 flex flex-col relative">
       <Toaster richColors position="top-right" closeButton />
       
+      {/* Botão Back to Top - Compacto e Alinhado à Direita */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-6 right-4 z-[100] p-2 rounded-lg bg-blue-600/80 text-white shadow-lg backdrop-blur-sm transition-all duration-300 hover:bg-blue-600 active:scale-90 border border-white/20 ${
+          showBackToTop ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-75 pointer-events-none"
+        }`}
+        title="Voltar ao topo"
+      >
+        <ChevronUp size={18} strokeWidth={3} />
+      </button>
+
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 shrink-0">
         <div>
           <Breadcrumb itemAtual="Checklist Diário" />
