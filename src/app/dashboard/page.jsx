@@ -1,174 +1,217 @@
 "use client";
 import { useState, useEffect } from "react";
-import { FileText, AlertTriangle, Clock, TrendingUp } from "lucide-react";
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell 
+  ClipboardCheck, 
+  AlertCircle, 
+  Activity, 
+  Search, 
+  ArrowUpRight, 
+  Zap, 
+  Filter,
+  MoreHorizontal,
+  LayoutGrid,
+  List
+} from "lucide-react";
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, 
+  AreaChart, Area 
 } from 'recharts';
 import Breadcrumb from "../../components/Breadcrumb";
 import Skeleton from "../../components/Skeleton";
 
-// Dados baseados na sua planilha para o gráfico
-const dadosGrafico = [
-  { name: 'Atrasados', valor: 2, color: '#ef4444' }, 
-  { name: 'Em Alerta', valor: 11, color: '#f59e0b' }, 
-  { name: 'Em Dia', valor: 3, color: '#10b981' },   
+// Dados simulados com curva de atividade
+const dadosAtividadeTurno = [
+  { hora: '07:00', checklists: 2 },
+  { hora: '08:00', checklists: 12 },
+  { hora: '09:00', checklists: 8 },
+  { hora: '10:00', checklists: 4 },
+  { hora: '11:00', checklists: 15 },
+  { hora: '12:00', checklists: 20 },
 ];
 
-export default function DashboardPage() {
+export default function DashboardSeniorPage() {
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulação de carregamento dos dados do Dashboard
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
+    const timer = setTimeout(() => setIsLoading(false), 1200);
     return () => clearTimeout(timer);
   }, []);
 
+  if (isLoading) return <SkeletonDashboard />;
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="min-h-screen space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 text-left pb-20">
       
-      {/* --- CABEÇALHO --- */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <Breadcrumb itemAtual="Dashboard" />
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
-            Painel de Controle Operacional
+      {/* --- HEADER ULTRA CLEAN --- */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+        <div className="space-y-1">
+          <Breadcrumb itemAtual="Overview Operacional" />
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">
+            Checklist <span className="text-blue-600">Live</span>
           </h1>
+          <p className="text-slate-400 font-medium text-sm">Monitoramento em tempo real do efetivo e carga do 17º BPM.</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex flex-col items-end mr-4">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status do Servidor</span>
+            <span className="text-xs font-bold text-emerald-500 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span> Sincronizado
+            </span>
+          </div>
+          <button className="h-12 px-6 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 active:scale-95">
+            Novo Checklist
+          </button>
         </div>
       </div>
 
-      {/* --- GRID DE CARDS DE ESTATÍSTICAS --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* --- BENTO GRID DE MÉTRICAS --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
-        {/* Card: SERVIÇOS ATRASADOS */}
-        {isLoading ? (
-          <Skeleton className="h-32 w-full rounded-2xl" />
-        ) : (
-          <div className="relative bg-white p-4 rounded-2xl shadow-sm border border-slate-100 group hover:border-red-100 transition-colors">
-            <div className="absolute -top-4 left-4 w-12 h-12 bg-linear-to-tr from-red-600 to-red-400 rounded-xl shadow-lg shadow-red-500/30 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-              <AlertTriangle size={24} />
-            </div>
-            <div className="text-right pt-2">
-              <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Atrasados</p>
-              <h3 className="text-3xl font-bold text-slate-700 font-mono">02</h3>
-            </div>
-            <div className="border-t border-slate-50 mt-4 pt-2">
-              <p className="text-[10px] text-red-500 font-bold uppercase italic">
-                Ação imediata necessária
-              </p>
-            </div>
+        {/* Card 01 - Eficiência */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform">
+            <Zap size={80} />
           </div>
-        )}
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Aderência do Turno</p>
+          <div className="flex items-end gap-2">
+            <h3 className="text-4xl font-black text-slate-900 leading-none">92%</h3>
+            <span className="text-emerald-500 text-xs font-bold flex items-center mb-1">
+              <ArrowUpRight size={14} /> +4%
+            </span>
+          </div>
+          <div className="mt-6 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+             <div className="bg-blue-600 h-full w-[92%] rounded-full"></div>
+          </div>
+        </div>
 
-        {/* Card: EM ALERTA */}
-        {isLoading ? (
-          <Skeleton className="h-32 w-full rounded-2xl" />
-        ) : (
-          <div className="relative bg-white p-4 rounded-2xl shadow-sm border border-slate-100 group hover:border-amber-100 transition-colors">
-            <div className="absolute -top-4 left-4 w-12 h-12 bg-linear-to-tr from-amber-500 to-orange-400 rounded-xl shadow-lg shadow-amber-500/30 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-              <Clock size={24} />
-            </div>
-            <div className="text-right pt-2">
-              <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Em Alerta</p>
-              <h3 className="text-3xl font-bold text-slate-700 font-mono">11</h3>
-            </div>
-            <div className="border-t border-slate-50 mt-4 pt-2">
-              <p className="text-[10px] text-amber-600 font-bold uppercase">
-                Vencendo nos próximos 30 dias
-              </p>
+        {/* Card 02 - Alertas */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group border-l-4 border-l-amber-400">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Avarias Detectadas</p>
+          <div className="flex items-center justify-between">
+            <h3 className="text-4xl font-black text-slate-900 leading-none">05</h3>
+            <div className="p-3 bg-amber-50 text-amber-500 rounded-2xl group-hover:bg-amber-500 group-hover:text-white transition-all">
+              <AlertCircle size={20} />
             </div>
           </div>
-        )}
+          <p className="mt-4 text-[10px] font-bold text-amber-600 uppercase tracking-tight italic">Requer inspeção da P4</p>
+        </div>
 
-        {/* Card: CHAMADOS ABERTOS */}
-        {isLoading ? (
-          <Skeleton className="h-32 w-full rounded-2xl" />
-        ) : (
-          <div className="relative bg-white p-4 rounded-2xl shadow-sm border border-slate-100 group hover:border-blue-100 transition-colors">
-            <div className="absolute -top-4 left-4 w-12 h-12 bg-linear-to-tr from-blue-600 to-blue-400 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-              <FileText size={24} />
-            </div>
-            <div className="text-right pt-2">
-              <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Chamados Ativos</p>
-              <h3 className="text-3xl font-bold text-slate-700 font-mono">04</h3>
-            </div>
-            <div className="border-t border-slate-50 mt-4 pt-2 flex items-center gap-1">
-              <TrendingUp size={12} className="text-emerald-500" />
-              <p className="text-[10px] text-slate-400 font-medium italic">
-                Vínculo com planilha ativo
-              </p>
+        {/* Card 03 - Volume */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Checklists Hoje</p>
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-4xl font-black text-slate-900 leading-none">42</h3>
+            <span className="text-slate-300 font-bold text-sm">/ 48</span>
+          </div>
+          <p className="mt-4 text-[10px] font-bold text-slate-400 uppercase">6 restantes para o fechamento</p>
+        </div>
+
+        {/* Card 04 - Tempo Médio */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Tempo de Conferência</p>
+          <div className="flex items-center justify-between">
+            <h3 className="text-4xl font-black text-slate-900 leading-none">04' <span className="text-xl">min</span></h3>
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+              <Activity size={20} />
             </div>
           </div>
-        )}
+          <p className="mt-4 text-[10px] font-bold text-emerald-500 uppercase tracking-tight">Otimização: -12s vs ontem</p>
+        </div>
       </div>
 
-      {/* --- SEÇÃO DE GRÁFICOS --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* --- SEÇÃO ANALÍTICA COMPLEXA --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Gráfico de Barras */}
-        {isLoading ? (
-          <Skeleton className="h-80 w-full rounded-3xl" />
-        ) : (
-          <div className="bg-white rounded-3xl shadow-sm p-8 border border-slate-100">
-            <div className="mb-8 text-left">
-              <h2 className="text-slate-800 font-bold text-sm uppercase tracking-wider">Status das Manutenções</h2>
-              <p className="text-xs text-slate-400">Distribuição baseada na periodicidade da planilha</p>
+        {/* GRÁFICO DE ÁREA - FLUXO DE TRABALHO */}
+        <div className="lg:col-span-2 bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+            <div>
+              <h2 className="text-lg font-black text-slate-800 tracking-tight">Atividade de Conferência</h2>
+              <p className="text-xs text-slate-400 font-medium italic">Picos de entrega de carga por horário</p>
             </div>
-            
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dadosGrafico}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fontSize: 10, fontWeight: 'bold', fill: '#64748b'}}
-                  />
-                  <YAxis hide />
-                  <Tooltip 
-                    cursor={{fill: '#f8fafc'}}
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                  />
-                  <Bar dataKey="valor" radius={[8, 8, 0, 0]} barSize={45}>
-                    {dadosGrafico.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-2">
+               <button className="px-4 py-1.5 bg-white shadow-sm rounded-xl text-[10px] font-black uppercase tracking-widest">Matutino</button>
+               <button className="px-4 py-1.5 text-slate-400 text-[10px] font-black uppercase tracking-widest">Noturno</button>
             </div>
           </div>
-        )}
+          
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={dadosAtividadeTurno}>
+                <defs>
+                  <linearGradient id="colorCheck" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="hora" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#94a3b8'}} />
+                <Tooltip 
+                   contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', padding: '15px' }}
+                />
+                <Area type="monotone" dataKey="checklists" stroke="#3b82f6" strokeWidth={4} fillOpacity={1} fill="url(#colorCheck)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-        {/* Card Informativo Premium */}
-        {isLoading ? (
-          <Skeleton className="h-80 w-full rounded-3xl" />
-        ) : (
-          <div className="bg-linear-to-br from-slate-800 to-slate-950 rounded-3xl p-8 text-white relative overflow-hidden flex flex-col justify-between text-left shadow-xl">
-              <div className="relative z-10">
-                <h2 className="text-xl font-bold mb-3">Resumo Operacional</h2>
-                <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-                  Atualmente, <strong className="text-white text-lg">68%</strong> dos serviços do 17º BPM requerem atenção ou atualização de dados no sistema.
-                </p>
-              </div>
-              
-              <div className="mt-8 flex gap-4 relative z-10">
-                <div className="bg-white/5 p-4 rounded-2xl backdrop-blur-md border border-white/10 grow">
-                  <p className="text-[10px] uppercase font-bold text-blue-400 mb-1 tracking-widest">Próximo Vencimento Crítico</p>
-                  <p className="text-sm font-bold text-slate-100">Dedetização Geral</p>
-                  <p className="text-xs text-slate-400 mt-1">12 de Março, 2026</p>
+        {/* FEED DE ÚLTIMOS CHECKLISTS - ESTILO "GLASS" */}
+        <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
+           <div className="flex items-center justify-between mb-8 relative z-10">
+              <h2 className="text-sm font-black uppercase tracking-widest">Atividade Recente</h2>
+              <MoreHorizontal size={20} className="text-slate-500" />
+           </div>
+
+           <div className="space-y-6 relative z-10">
+              {[
+                { ref: "L0102", status: "Crítico", time: "14:10", label: "Sgt Anderson" },
+                { ref: "L0145", status: "OK", time: "13:55", label: "Cabo Castro" },
+                { ref: "L0120", status: "OK", time: "13:30", label: "Sd Oliveira" },
+                { ref: "L0109", status: "Atenção", time: "12:15", label: "Sgt Silva" },
+              ].map((log, i) => (
+                <div key={i} className="flex items-center justify-between group cursor-pointer">
+                   <div className="flex items-center gap-4">
+                      <div className={`w-2 h-2 rounded-full ${log.status === 'OK' ? 'bg-emerald-500' : log.status === 'Atenção' ? 'bg-amber-500' : 'bg-red-500'} animate-pulse`}></div>
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-widest">{log.ref}</p>
+                        <p className="text-[10px] text-slate-500 font-bold">{log.label}</p>
+                      </div>
+                   </div>
+                   <div className="text-right">
+                      <p className="text-[10px] font-mono text-slate-400">{log.time}</p>
+                      <p className={`text-[9px] font-black uppercase ${log.status === 'OK' ? 'text-emerald-500' : 'text-red-500'}`}>{log.status}</p>
+                   </div>
                 </div>
-              </div>
+              ))}
+           </div>
 
-              {/* Detalhes decorativos de UI */}
-              <div className="absolute -bottom-16 -right-16 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div>
-              <div className="absolute top-0 right-0 p-8 opacity-10">
-                <TrendingUp size={120} />
-              </div>
-          </div>
-        )}
+           <button className="w-full mt-10 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
+              Ver Histórico Completo
+           </button>
+
+           {/* Gradient Decorativo */}
+           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-600/20 rounded-full blur-[100px]"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente de Skeleton
+function SkeletonDashboard() {
+  return (
+    <div className="p-10 space-y-10">
+      <div className="flex justify-between items-end">
+        <Skeleton className="h-12 w-64 rounded-2xl" />
+        <Skeleton className="h-12 w-48 rounded-2xl" />
+      </div>
+      <div className="grid grid-cols-4 gap-6">
+        {[1,2,3,4].map(i => <Skeleton key={i} className="h-40 rounded-[2.5rem]" />)}
+      </div>
+      <div className="grid grid-cols-3 gap-8">
+        <Skeleton className="h-80 col-span-2 rounded-[3rem]" />
+        <Skeleton className="h-80 rounded-[3rem]" />
       </div>
     </div>
   );

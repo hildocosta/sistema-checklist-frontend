@@ -1,11 +1,22 @@
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { FileText, Download, Printer, Loader2 } from "lucide-react";
+import { 
+  FileText, 
+  Download, 
+  Printer, 
+  Loader2, 
+  Calendar as CalendarIcon, 
+  Sun, 
+  Moon, 
+  Search,
+  ChevronRight,
+  Filter
+} from "lucide-react";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
-// Seus Componentes Reutilizáveis
+// Componentes Reutilizáveis
 import Breadcrumb from "../../../components/Breadcrumb";
 import ActionButton from "../../../components/ActionButton";
 import DataTable from "../../../components/DataTable";
@@ -15,215 +26,209 @@ import Skeleton from "../../../components/Skeleton";
 export default function RelatoriosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [relatorioSelecionado, setRelatorioSelecionado] = useState(null);
+  const [filtroData, setFiltroData] = useState("");
 
-  // Simulação de carregamento de dados pesados de relatório
+  // Dados Simulados de Relatórios Realizados
+  const listaRelatorios = [
+    { id: 1, data: "2026-03-29", turno: "Matutino", responsavel: "Sgt. Anderson", itens: 42, status: "Finalizado" },
+    { id: 2, data: "2026-03-28", turno: "Noturno", responsavel: "Sgt. Castro", itens: 38, status: "Finalizado" },
+    { id: 3, data: "2026-03-28", turno: "Matutino", responsavel: "Sgt. Silva", itens: 40, status: "Finalizado" },
+    { id: 4, data: "2026-03-27", turno: "Noturno", responsavel: "Cabo Oliveira", itens: 35, status: "Finalizado" },
+  ];
+
+  // Dados do conteúdo do relatório selecionado
+  const dadosMockRelatorio = [
+    { item: "Viatura prefixo 14902", condicao: "Operacional", obs: "Sem avarias" },
+    { item: "Carregadores Beretta (02 un)", condicao: "Completo", obs: "Municiado" },
+    { item: "Colete Balístico", condicao: "Vencimento 2028", obs: "Em ordem" },
+    { item: "Rádio HT Motorola", condicao: "Operacional", obs: "Bateria 100%" },
+  ];
+
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1500);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      setRelatorioSelecionado(listaRelatorios[0]); // Seleciona o mais recente por padrão
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  const dadosManutencao = [
-    { servico: "Limpeza de Caixa D'Água", ultimaExec: "07/11/2024", vencimento: "07/11/2025", situacao: "Atrasado" },
-    { servico: "Manutenção Ar Condicionado", ultimaExec: "18/12/2023", vencimento: "18/12/2024", situacao: "Atrasado" },
-    { servico: "Dedetização / Desratização", ultimaExec: "12/09/2025", vencimento: "12/03/2026", situacao: "Em Dia" },
-    { servico: "Revisão Elétrica Setor A", ultimaExec: "10/01/2026", vencimento: "10/07/2026", situacao: "Em Dia" },
-  ];
-
-  const colunas = [
-    { label: "Serviço / Local", align: "left" },
-    { label: "Última Exec.", align: "center" },
-    { label: "Vencimento", align: "center" },
-    { label: "Situação", align: "right" },
-  ];
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleExportExcel = async () => {
-    setIsExporting(true);
-    try {
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet("Relatório de Manutenção");
-
-      worksheet.columns = [
-        { header: "SERVIÇO / MANUTENÇÃO", key: "servico", width: 40 },
-        { header: "ÚLTIMA EXECUÇÃO", key: "ultimaExec", width: 20 },
-        { header: "VENCIMENTO", key: "vencimento", width: 20 },
-        { header: "SITUAÇÃO", key: "situacao", width: 15 },
-      ];
-
-      const headerRow = worksheet.getRow(1);
-      headerRow.font = { bold: true, color: { argb: "FFFFFF" } };
-      headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "1A73E8" } };
-
-      dadosManutencao.forEach((item) => {
-        worksheet.addRow(item);
-      });
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      saveAs(new Blob([buffer]), `Relatorio_17BPM_${new Date().toLocaleDateString()}.xlsx`);
-    } catch (error) {
-      console.error("Erro ao exportar:", error);
-    } finally {
-      setIsExporting(false);
-    }
-  };
+  const handlePrint = () => window.print();
 
   return (
-    <div className="animate-in fade-in duration-700 space-y-8 print:space-y-0 print:m-0 print:p-0">
+    <div className="animate-in fade-in duration-700 space-y-8 print:space-y-0">
       
-      {/* INJEÇÃO DE CSS PARA REMOVER ELEMENTOS NA IMPRESSÃO */}
       <style jsx global>{`
         @media print {
-          aside, nav, header, .no-print, [role="navigation"], .breadcrumb-container { 
-            display: none !important; 
-          }
-          main, .main-content { 
-            margin: 0 !important; 
-            padding: 0 !important; 
-            width: 100% !important;
-          }
-          body { background: white !important; }
-          .report-card { 
-            box-shadow: none !important; 
-            border: none !important; 
-            padding: 0 !important;
-          }
+          aside, nav, header, .no-print, .sidebar-relatorios, .header-acoes { display: none !important; }
+          main { margin: 0 !important; padding: 0 !important; }
+          .report-card { border: none !important; box-shadow: none !important; width: 100% !important; }
         }
       `}</style>
 
       {/* --- HEADER DE AÇÕES --- */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden text-left">
+      <div className="header-acoes flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
         <div>
-          <Breadcrumb itemAtual="Relatórios" />
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">
-            Central de Relatórios
-          </h1>
+          <Breadcrumb itemAtual="Arquivo de Relatórios" />
+          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Histórico de Conferência</h1>
+          <p className="text-xs text-slate-400 font-medium mt-1 uppercase tracking-wider">Consulta de turnos e exportação de PDF</p>
         </div>
 
         <div className="flex gap-3">
           <button 
-            disabled={isLoading}
             onClick={handlePrint}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase shadow-sm hover:bg-slate-50 transition cursor-pointer active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase shadow-sm hover:bg-slate-50 transition active:scale-95"
           >
             <Printer size={16} /> Imprimir PDF
           </button>
-          
           <ActionButton 
-            onClick={handleExportExcel}
-            disabled={isLoading || isExporting}
-            icon={isExporting ? Loader2 : Download}
-            label={isExporting ? "Gerando..." : "Exportar Excel"}
-            className={isExporting ? "animate-pulse" : ""}
+            icon={Download} 
+            label="Planilha Geral" 
+            onClick={() => {}} 
           />
         </div>
       </div>
 
-      {/* --- ÁREA DO RELATÓRIO --- */}
-      <div className="report-card bg-white rounded-3xl shadow-sm border border-slate-100 p-10 min-h-screen print:min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Cabeçalho Institucional */}
-        <div className="flex justify-between items-center border-b-2 border-slate-100 pb-8 mb-8">
-          <div className="flex items-center gap-4 text-left">
-            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 overflow-hidden relative">
-               <Image 
-                src="/assets/image/bg-profile.png" 
-                alt="Brasão 17º BPM" 
-                width={48} 
-                height={48} 
-                className="object-contain"
-                priority
-               />
+        {/* --- SIDEBAR DE SELEÇÃO --- */}
+        <div className="sidebar-relatorios lg:col-span-4 space-y-6">
+          <div className="bg-slate-100/50 p-4 rounded-3xl border border-slate-200/60 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input 
+                type="date" 
+                className="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold text-slate-600 outline-none focus:border-blue-400 transition"
+                onChange={(e) => setFiltroData(e.target.value)}
+              />
             </div>
-            <div>
-              <h2 className="text-lg font-black text-slate-800 uppercase tracking-tighter leading-none">Polícia Militar do Estado do Paraná</h2>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">17º Batalhão de Polícia Militar</p>
-              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tight">Seção de Logística e Manutenção</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data do Relatório</p>
-            <p className="text-sm font-bold text-slate-700 tracking-tight">28 de Março, 2026</p>
-          </div>
-        </div>
 
-        {/* Resumo Estatístico */}
-        <div className="grid grid-cols-3 gap-6 mb-10 text-left">
-          {isLoading ? (
-            <>
-              <Skeleton className="h-24 rounded-3xl" />
-              <Skeleton className="h-24 rounded-3xl" />
-              <Skeleton className="h-24 rounded-3xl" />
-            </>
-          ) : (
-            <>
-              <div className="bg-slate-50/50 p-5 rounded-3xl border border-slate-100 print:bg-slate-50">
-                <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Eficiência Geral</p>
-                <p className="text-2xl font-black text-emerald-600">82.5%</p>
-              </div>
-              <div className="bg-slate-50/50 p-5 rounded-3xl border border-slate-100 print:bg-slate-50">
-                <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Serviços Pendentes</p>
-                <p className="text-2xl font-black text-amber-500">11 <span className="text-[10px] text-slate-400 font-medium italic">itens</span></p>
-              </div>
-              <div className="bg-slate-50/50 p-5 rounded-3xl border border-slate-100 print:bg-slate-50">
-                <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Urgência Crítica</p>
-                <p className="text-2xl font-black text-red-500">02 <span className="text-[10px] text-slate-400 font-medium italic">itens</span></p>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Tabela de Detalhamento */}
-        <div className="space-y-6">
-          <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.15em] flex items-center gap-2 text-left">
-            <FileText size={14} className="text-blue-600" /> Detalhamento de Manutenções
-          </h3>
-          
-          {isLoading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          ) : (
-            <DataTable 
-              columns={colunas}
-              data={dadosManutencao}
-              showFooter={false}
-              renderRow={(item, idx) => (
-                <tr key={idx} className="print:break-inside-avoid border-b border-slate-50">
-                  <td className="px-8 py-5 text-sm font-bold text-slate-700 text-left">{item.servico}</td>
-                  <td className="px-8 py-5 text-xs text-slate-500 text-center font-medium">{item.ultimaExec}</td>
-                  <td className={`px-8 py-5 text-xs text-center font-black ${item.situacao === 'Atrasado' ? 'text-red-600' : 'text-emerald-600'}`}>
-                    {item.vencimento}
-                  </td>
-                  <td className="px-8 py-5 text-right">
-                    <StatusBadge status={item.situacao} />
-                  </td>
-                </tr>
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Relatórios Recentes</p>
+              {isLoading ? (
+                [1,2,3].map(i => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)
+              ) : (
+                listaRelatorios.map((rel) => (
+                  <button
+                    key={rel.id}
+                    onClick={() => setRelatorioSelecionado(rel)}
+                    className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-left group ${
+                      relatorioSelecionado?.id === rel.id 
+                      ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200" 
+                      : "bg-white border-slate-100 text-slate-600 hover:border-blue-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`p-2.5 rounded-xl ${relatorioSelecionado?.id === rel.id ? "bg-white/20" : "bg-slate-50"}`}>
+                        {rel.turno === "Matutino" ? <Sun size={18} /> : <Moon size={18} />}
+                      </div>
+                      <div>
+                        <p className={`text-[10px] font-black uppercase tracking-tight ${relatorioSelecionado?.id === rel.id ? "text-blue-100" : "text-slate-400"}`}>
+                          {new Date(rel.data).toLocaleDateString('pt-BR')}
+                        </p>
+                        <p className="text-sm font-bold">{rel.turno}</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={18} className={relatorioSelecionado?.id === rel.id ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"} />
+                  </button>
+                ))
               )}
-            />
-          )}
-        </div>
-
-        {/* Rodapé de Validação */}
-        <div className="mt-20 pt-10 flex justify-between items-end print:mt-10">
-          <div className="space-y-4">
-            <div className="text-center">
-              <div className="w-64 border-b border-slate-300 mb-2"></div>
-              <p className="text-[9px] font-black text-slate-800 uppercase tracking-widest">Encarregado de Manutenção</p>
-              <p className="text-[8px] font-bold text-slate-400 uppercase">17º Batalhão de Polícia Militar</p>
             </div>
           </div>
-          <div className="text-right text-slate-400">
-            <p className="text-[9px] font-medium italic mb-1">GIM - Gestão de Infraestrutura Militar</p>
-            <p className="text-[9px] font-black uppercase tracking-tighter text-slate-500">
-              Gerado em: {new Date().toLocaleDateString()} - {new Date().toLocaleTimeString()}
-            </p>
-          </div>
+        </div>
+
+        {/* --- ÁREA DE VISUALIZAÇÃO DO RELATÓRIO --- */}
+        <div className="lg:col-span-8">
+          {relatorioSelecionado ? (
+            <div className="report-card bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-12 min-h-screen relative overflow-hidden">
+              {/* Marca d'água ou Detalhe Lateral */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-bl-full -mr-16 -mt-16 opacity-50"></div>
+
+              {/* Cabeçalho do Documento */}
+              <div className="flex justify-between items-start border-b-2 border-slate-100 pb-10 mb-10 relative">
+                <div className="flex gap-6">
+                  <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100">
+                     <Image src="/assets/image/bg-profile.png" alt="Brasão" width={56} height={56} className="grayscale" />
+                  </div>
+                  <div className="text-left">
+                    <h2 className="text-xl font-black text-slate-800 uppercase tracking-tighter leading-tight">Relatório de Carga e Turno</h2>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">17º Batalhão de Polícia Militar</p>
+                    <div className="flex gap-4 mt-3">
+                       <span className="flex items-center gap-1.5 text-[10px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-full uppercase">
+                         <CalendarIcon size={12} /> {new Date(relatorioSelecionado.data).toLocaleDateString('pt-BR')}
+                       </span>
+                       <span className="flex items-center gap-1.5 text-[10px] font-black bg-slate-100 text-slate-600 px-3 py-1 rounded-full uppercase">
+                         {relatorioSelecionado.turno === "Matutino" ? <Sun size={12} /> : <Moon size={12} />} {relatorioSelecionado.turno}
+                       </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Protocolo Digital</p>
+                  <p className="text-sm font-mono font-bold text-slate-400">#2026-BPM17-{relatorioSelecionado.id.toString().padStart(4, '0')}</p>
+                </div>
+              </div>
+
+              {/* Informações do Responsável */}
+              <div className="grid grid-cols-2 gap-10 mb-12 text-left bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Militar Responsável</p>
+                  <p className="text-sm font-bold text-slate-700">{relatorioSelecionado.responsavel}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Seção / Destino</p>
+                  <p className="text-sm font-bold text-slate-700">P4 - Logística / Patrulha Urbana</p>
+                </div>
+              </div>
+
+              {/* Tabela de Itens Conferidos */}
+              <div className="space-y-6">
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] flex items-center gap-2 text-left">
+                  <FileText size={14} className="text-blue-600" /> Conferência de Itens de Carga
+                </h3>
+                
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Item / Equipamento</th>
+                      <th className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Estado</th>
+                      <th className="py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Observações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dadosMockRelatorio.map((dado, i) => (
+                      <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/50 transition">
+                        <td className="py-5 text-sm font-bold text-slate-700">{dado.item}</td>
+                        <td className="py-5 text-center">
+                          <span className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg uppercase tracking-tighter">
+                            {dado.condicao}
+                          </span>
+                        </td>
+                        <td className="py-5 text-right text-xs font-medium text-slate-500 italic">{dado.obs}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Assinatura Digital / Rodapé */}
+              <div className="mt-20 pt-10 border-t border-slate-100 flex justify-between items-center">
+                <div className="text-left">
+                  <div className="w-48 h-px bg-slate-300 mb-2"></div>
+                  <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Assinatura do Graduado de Dia</p>
+                  <p className="text-[9px] text-slate-400 uppercase font-bold">Autenticado via Sistema GIM</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-bold text-slate-400">PMPR - 17º BPM - São José dos Pinhais</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="h-[600px] flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem]">
+               <FileText size={48} className="mb-4 opacity-20" />
+               <p className="font-bold uppercase tracking-widest text-sm">Selecione um relatório para visualizar</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

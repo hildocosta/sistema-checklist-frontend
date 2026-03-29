@@ -1,0 +1,326 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { 
+  ClipboardCheck, Printer, Save, 
+  Search, BookOpen, AlertTriangle,
+  RotateCcw, CheckCircle2, ShieldCheck,
+  Zap, Package, Radio, CarFront,
+  Activity, Flashlight, Layers
+} from "lucide-react";
+import { toast, Toaster } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+// --- IMPORTAÇÃO DOS DADOS  ---
+import { INVENTARIO_COMPLETO, EFETIVO_17BPM } from "../../../data/inventario/index";
+
+// Componentes de interface
+import Breadcrumb from "../../../components/Breadcrumb";
+import ActionButton from "../../../components/ActionButton";
+import Skeleton from "../../../components/Skeleton";
+
+export default function ChecklistPage() {
+  const [items, setItems] = useState(INVENTARIO_COMPLETO);
+  const [isLoading, setIsLoading] = useState(true);
+  const [abaAtiva, setAbaAtiva] = useState("armamento");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Definição das Categorias com redistribuição e nova aba
+  const categorias = [
+    { id: "armamento", label: "Armas", icon: ShieldCheck },
+    { id: "municao", label: "Munições", icon: Zap },
+    { id: "taser", label: "Taser", icon: Flashlight },
+    { id: "equipamento", label: "Equips", icon: Package },
+    { id: "comunicacao", label: "Rádios", icon: Radio },
+    { id: "veiculo", label: "Viaturas", icon: CarFront },
+    { id: "sade", label: "Sade", icon: Activity },
+    { id: "acessoriosade", label: "Acess SADE", icon: Layers },
+  ];
+
+  const getPendencias = (catId) => items.filter(i => i.cat === catId && i.status !== "ok").length;
+  const isConferenciaCompleta = items.every(item => item.status === "ok");
+
+  const itensExibidos = useMemo(() => {
+    return items.filter(item => item.cat === abaAtiva);
+  }, [items, abaAtiva]);
+
+  const handleUpdateItem = (id, updates) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+  };
+
+  const handleToggleStatus = (id) => {
+    setItems(prev => prev.map(item => 
+      item.id === id ? { ...item, status: item.status === "ok" ? "pendente" : "ok" } : item
+    ));
+  };
+
+  const handleReset = () => {
+    setItems(INVENTARIO_COMPLETO);
+    toast.info("Checklist resetado com sucesso.");
+  };
+
+  const gerarPDF = () => {
+    if (!isConferenciaCompleta) {
+      toast.error("Conferência Incompleta", {
+        description: "Marque todos os itens de TODAS as abas como conferidos.",
+        icon: <AlertTriangle className="text-red-500" />,
+      });
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      const dataFormatada = new Date().toLocaleDateString('pt-BR');
+      
+      doc.setFontSize(10).setFont("helvetica", "bold");
+      doc.text("POLÍCIA MILITAR DO PARANÁ", 105, 15, { align: "center" });
+      doc.text("17º BATALHÃO DE POLÍCIA MILITAR", 105, 21, { align: "center" });
+      doc.text("RELATÓRIO DE CONFERÊNCIA DIÁRIA - FURRIELAÇÃO", 105, 30, { align: "center" });
+
+      let currentY = 40;
+      categorias.forEach(categoria => {
+        const itensDaCat = items.filter(i => i.cat === categoria.id);
+        if (itensDaCat.length === 0) return;
+
+        doc.setFontSize(9).setFont("helvetica", "bold").setTextColor(100);
+        doc.text(`--- ${categoria.label.toUpperCase()} ---`, 15, currentY);
+        
+        const tableData = itensDaCat.map((item, idx) => [
+          String(idx + 1).padStart(2, '0'),
+          item.qtd,
+          `${item.desc}\nSÉRIE: ${item.serie}`,
+          item.pmpr,
+          item.cautela || "FURRIELAÇÃO",
+          "OK"
+        ]);
+
+        autoTable(doc, {
+          startY: currentY + 2,
+          head: [["ORD", "QTD", "EQUIPAMENTO", "PMPR", "OBS", "CONF."]],
+          body: tableData,
+          theme: 'grid',
+          headStyles: { fillGray: 80, fontSize: 7 },
+          styles: { fontSize: 7 },
+          columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 10 }, 5: { textColor: [0, 100, 0] } }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 10;
+      });
+
+      doc.save(`Checklist_17BPM_${dataFormatada.replace(/\//g, '-')}.pdf`);
+      toast.success("PDF gerado com sucesso!");
+    } catch (error) { toast.error("Erro ao gerar PDF"); }
+  };
+
+  return (
+    <div className="animate-in fade-in duration-700 space-y-6 max-w-full mx-auto p-4 flex flex-col">
+      <Toaster richColors position="top-right" closeButton />
+      
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 shrink-0">
+        <div>
+          <Breadcrumb itemAtual="Checklist Diário" />
+          <h1 className="text-xl font-bold text-slate-700 tracking-tight">Furrielação: Gestão de Carga</h1>
+        </div>
+        <div className="flex gap-2">
+          <ActionButton icon={RotateCcw} label="Resetar" onClick={handleReset} variant="outline" />
+          <ActionButton icon={Printer} label="Gerar PDF" onClick={gerarPDF} disabled={!isConferenciaCompleta} />
+        </div>
+      </div>
+
+      {/* Navegação por Abas */}
+      <div className="bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200 w-full overflow-hidden">
+        <div className="flex flex-row justify-between gap-1 w-full">
+          {categorias.map((categoria) => {
+            const Icon = categoria.icon;
+            const pendencias = getPendencias(categoria.id);
+            const isActive = abaAtiva === categoria.id;
+            
+            return (
+              <button
+                key={categoria.id}
+                onClick={() => setAbaAtiva(categoria.id)}
+                className={`
+                  flex-1 flex items-center justify-center gap-2 px-2 py-2.5 rounded-xl
+                  text-[10px] font-bold uppercase tracking-tight transition-all duration-200
+                  ${isActive 
+                    ? "bg-white text-blue-600 shadow-md border border-blue-100" 
+                    : "text-slate-400 hover:text-slate-600 hover:bg-white/40"}
+                `}
+              >
+                <Icon size={14} className={isActive ? "text-blue-600" : "text-slate-400"} />
+                <span className="hidden sm:inline">{categoria.label}</span>
+                {pendencias > 0 && (
+                  <span className={`
+                    ml-1 px-1.5 py-0.5 rounded-full text-[9px] animate-pulse
+                    ${isActive ? 'bg-blue-600 text-white' : 'bg-amber-500 text-white'}
+                  `}>
+                    {pendencias}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="bg-white border border-slate-100 p-6 space-y-4">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
+        </div>
+      ) : (
+        <div className="border border-slate-100 bg-white shadow-sm overflow-x-auto rounded-2xl">
+          <table className="w-full border-collapse table-fixed min-w-[800px]">
+            <thead>
+              <tr className="border-b border-slate-50 bg-slate-50/90 backdrop-blur-sm">
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[5%] text-left">Ord</th>
+                <th className="px-2 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[5%] text-center">Qnt</th>
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[25%] text-left">Equipamento / Série</th>
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[18%] text-center">Nº PMPR</th>
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[30%] text-left">Cautela / Observações</th>
+                <th className="px-2 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[7%] text-center">Pág</th>
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[10%] text-right">Conf.</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {itensExibidos.map((item) => (
+                <RowChecklist 
+                  key={item.id} 
+                  item={item} 
+                  onToggle={() => handleToggleStatus(item.id)}
+                  onUpdate={(updates) => handleUpdateItem(item.id, updates)}
+                />
+              ))}
+            </tbody>
+          </table>
+          {itensExibidos.length === 0 && (
+            <div className="p-10 text-center text-slate-400 text-xs italic">Nenhum item nesta categoria.</div>
+          )}
+        </div>
+      )}
+
+      {/* Footer / Assinatura */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-100 flex flex-col md:flex-row justify-between items-center shadow-sm gap-6 shrink-0">
+        <div className="flex gap-4 items-center">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors border ${isConferenciaCompleta ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-blue-50 text-blue-500 border-blue-100'}`}>
+             <Save size={24} />
+          </div>
+          <div className="text-left">
+            <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Responsável Turno</p>
+            <p className="text-sm font-semibold text-slate-600 italic">1º SGT Anderson Silva - RE 123.456-7</p>
+          </div>
+        </div>
+
+        <ActionButton 
+          icon={isConferenciaCompleta ? CheckCircle2 : AlertTriangle}
+          label={isConferenciaCompleta ? "Finalizar Conferência Geral" : "Pendências em Aberto..."}
+          onClick={() => isConferenciaCompleta ? toast.success("Relatório enviado com sucesso!") : toast.error("Existem itens não conferidos.")}
+          disabled={!isConferenciaCompleta}
+          variant={isConferenciaCompleta ? "success" : "disabled"}
+          className="h-12 lg:h-14 px-10"
+        />
+      </div>
+    </div>
+  );
+}
+
+function RowChecklist({ item, onToggle, onUpdate }) {
+  const [searchTerm, setSearchTerm] = useState(item.cautela);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const filteredEfetivo = EFETIVO_17BPM.filter(m => 
+    m.nome.toLowerCase().includes(searchTerm.toLowerCase()) || m.re.includes(searchTerm)
+  );
+
+  return (
+    <tr className={`transition-all duration-300 ${item.status === 'ok' ? 'bg-emerald-50/20' : 'hover:bg-slate-50/50'}`}>
+      <td className="px-4 py-4 text-xs font-semibold text-slate-400">#{String(item.id).padStart(2, '0')}</td>
+      <td className="px-2 py-4 text-center">
+        <div className="inline-flex items-center justify-center w-8 h-8 bg-slate-50 rounded-lg text-[10px] font-bold text-slate-400 border border-slate-200">
+          {item.qtd}
+        </div>
+      </td>
+      <td className="px-4 py-4">
+        <div className="flex flex-col text-left">
+          <span className="text-[11px] font-bold text-slate-700 leading-tight mb-1 break-words">{item.desc}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">SÉRIE:</span>
+            <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 leading-none">
+              {item.serie}
+            </span>
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-4 text-center">
+        <span className="bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg font-mono text-xs font-bold border border-slate-200 whitespace-nowrap inline-block">
+          {item.pmpr}
+        </span>
+      </td>
+      <td className="px-4 py-4 overflow-visible">
+        <div className="relative w-full">
+          <div className={`absolute left-3 top-1/2 -translate-y-1/2 ${searchTerm ? 'text-blue-400' : 'text-slate-300'}`}>
+            <Search size={14} />
+          </div>
+          <input 
+            type="text"
+            placeholder="Militar ou Obs..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setShowDropdown(true);
+              onUpdate({ cautela: e.target.value });
+            }}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+            className={`w-full pl-9 pr-3 py-2 border rounded-xl text-xs font-medium transition-all outline-none 
+              ${searchTerm ? 'bg-white border-blue-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400 italic'}`}
+          />
+          {showDropdown && searchTerm.length > 0 && filteredEfetivo.length > 0 && (
+            <div className="absolute z-[100] w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+              {filteredEfetivo.map(m => (
+                <button 
+                  key={m.id} 
+                  onMouseDown={() => {
+                    const val = `${m.nome} (${m.re})`;
+                    setSearchTerm(val);
+                    onUpdate({ cautela: val });
+                    setShowDropdown(false);
+                  }} 
+                  className="w-full px-3 py-2 text-left hover:bg-blue-50 text-xs font-medium text-slate-600 flex justify-between border-b border-slate-50 last:border-0"
+                >
+                  {m.nome} <span className="text-slate-400 font-mono text-[10px]">RE {m.re}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </td>
+      <td className="px-2 py-4 text-center">
+        <div className="relative w-12 mx-auto">
+          <BookOpen size={12} className={`absolute left-1 top-1/2 -translate-y-1/2 ${item.pagLivro ? 'text-blue-400' : 'text-slate-300'}`} />
+          <input 
+            type="text" value={item.pagLivro} placeholder="-"
+            onChange={(e) => onUpdate({ pagLivro: e.target.value })}
+            className="w-full pl-5 pr-1 py-1.5 bg-transparent border-b border-slate-100 text-xs font-bold text-slate-600 outline-none text-center"
+          />
+        </div>
+      </td>
+      <td className="px-4 py-4 text-right">
+        <button 
+          onClick={onToggle} 
+          className={`p-1.5 rounded-lg border transition-all ${
+            item.status === 'ok' 
+            ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm' 
+            : 'bg-white border-slate-200 text-slate-200 hover:text-emerald-400 hover:border-emerald-200'
+          }`}
+        >
+          <ClipboardCheck size={18} strokeWidth={2} />
+        </button>
+      </td>
+    </tr>
+  );
+}

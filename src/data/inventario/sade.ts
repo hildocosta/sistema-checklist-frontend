@@ -1,0 +1,145 @@
+export const SADE = [
+  { 
+    id: 53, 
+    cat: "sade", 
+    desc: "Celular Samsung (com película protetora)", 
+    pmpr: "100.003.345.792", 
+    serie: "----", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 54, 
+    cat: "sade", 
+    desc: "Celular Samsung (com película protetora)", 
+    pmpr: "100.003.345.793", 
+    serie: "----", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 55, 
+    cat: "sade", 
+    desc: "Celular Samsung (com película protetora)", 
+    pmpr: "100.003.345.799", 
+    serie: "----", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 56, 
+    cat: "sade", 
+    desc: "Celular Xiaomi (com película protetora)", 
+    pmpr: "----", 
+    serie: "IMEI 863495049080565", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 57, 
+    cat: "sade", 
+    desc: "Celular Xiaomi (com película protetora)", 
+    pmpr: "----", 
+    serie: "IMEI 863495049292541", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 58, 
+    cat: "sade", 
+    desc: "Celular Xiaomi (com película protetora)", 
+    pmpr: "----", 
+    serie: "IMEI 865604052828384", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 59, 
+    cat: "sade", 
+    desc: "Celular Xiaomi (com película protetora)", 
+    pmpr: "----", 
+    serie: "IMEI 867758056443166", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 60, 
+    cat: "sade", 
+    desc: "Impressora Térmica (LEOPARDO)", 
+    pmpr: "100.003.348.867", 
+    serie: "I S003685", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 61, 
+    cat: "sade", 
+    desc: "Impressora Térmica (LEOPARDO)", 
+    pmpr: "100.003.348.868", 
+    serie: "I S003347", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 62, 
+    cat: "sade", 
+    desc: "Impressora Térmica (LEOPARDO)", 
+    pmpr: "100.003.348.869", 
+    serie: "I S003682", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 63, 
+    cat: "sade", 
+    desc: "Impressora Térmica (LEOPARDO)", 
+    pmpr: "100.003.348.870", 
+    serie: "I S003673", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 64, 
+    cat: "sade", 
+    desc: "Impressora Térmica (LEOPARDO)", 
+    pmpr: "100.003.348.871", 
+    serie: "I S003695", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 65, 
+    cat: "sade", 
+    desc: "Impressora Térmica (LEOPARDO)", 
+    pmpr: "100.003.348.872", 
+    serie: "I S003359", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+];

@@ -1,0 +1,156 @@
+export const ARMAS = [
+  { 
+    id: 1, 
+    cat: "armamento", 
+    desc: "Pistola BERETTA APX 9mm (com 01 carregador)", 
+    pmpr: "P44131", 
+    serie: "AA146789B", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 2, 
+    cat: "armamento", 
+    desc: "Pistola BERETTA APX 9mm (com 01 carregador)", 
+    pmpr: "P44133", 
+    serie: "AA146791B", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 3, 
+    cat: "armamento", 
+    desc: "Pistola BERETTA APX 9mm (com 01 carregador)", 
+    pmpr: "P44136", 
+    serie: "AA094018B", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 4, 
+    cat: "armamento", 
+    desc: "Pistola BERETTA APX 9mm (com 01 carregador)", 
+    pmpr: "P44139", 
+    serie: "AA146797B", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 5, 
+    cat: "armamento", 
+    desc: "Pistola BERETTA APX 9mm (com 01 carregador)", 
+    pmpr: "P44141", 
+    serie: "AA146799B", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 6, 
+    cat: "armamento", 
+    desc: "Pistola BERETTA APX 9mm (com 01 carregador)", 
+    pmpr: "P44147", 
+    serie: "AA146805B", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 7, 
+    cat: "armamento", 
+    desc: "Pistola BERETTA APX 9mm (com 01 carregador)", 
+    pmpr: "P44148", 
+    serie: "AA146806B", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 8, 
+    cat: "armamento", 
+    desc: "Pistola BERETTA APX 9mm (com 01 carregador)", 
+    pmpr: "P44151", 
+    serie: "AA094019B", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 9, 
+    cat: "armamento", 
+    desc: "Sub Metralhadora TAURUS 9mm (com bandoleira)", 
+    pmpr: "M-00619", 
+    serie: "MW05114", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 10, 
+    cat: "armamento", 
+    desc: "Carabina IA2 IMBEL 5.56mm (com bandoleira)", 
+    pmpr: "C OO726", 
+    serie: "JFA 05706", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 11, 
+    cat: "armamento", 
+    desc: "Mosquetão 7.62mm - M968", 
+    pmpr: "----", 
+    serie: "9111", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 12, 
+    cat: "armamento", 
+    desc: "Mosquetão 7.62mm - M968", 
+    pmpr: "----", 
+    serie: "9115", 
+    status: "pendente", 
+    qtd: 1, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 13, 
+    cat: "armamento", 
+    desc: "Carregadores SMT9 9mm (para 30 cartuchos)", 
+    pmpr: "----", 
+    serie: "----", 
+    status: "pendente", 
+    qtd: 2, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+  { 
+    id: 14, 
+    cat: "armamento", 
+    desc: "Carregadores IA2 IMBEL 5.56mm (para 30 cartuchos)", 
+    pmpr: "----", 
+    serie: "----", 
+    status: "pendente", 
+    qtd: 2, 
+    cautela: "", 
+    pagLivro: "" 
+  },
+];

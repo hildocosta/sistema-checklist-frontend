@@ -13,17 +13,18 @@ import {
   UserPlus,
   LogOut,
   Loader2,
-  ChevronRight // Importada a setinha
+  ChevronRight,
+  ClipboardCheck
 } from "lucide-react";
 
 const menuItems = [
   { name: "Dashboard", icon: LayoutGrid, path: "/dashboard" },
-  { name: "Solicitações", icon: ClipboardList, path: "/dashboard/solicitacoes" },
-  { name: "Serviços", icon: Wrench, path: "/dashboard/servicos" },
-  { name: "Usuários", icon: Users, path: "/dashboard/usuarios" },
+  { name: "CheckList", icon: ClipboardCheck, path: "/dashboard/checklist" },
   { name: "Relatórios", icon: BarChart3, path: "/dashboard/relatorios" },
+  { name: "Usuários", icon: Users, path: "/dashboard/usuarios" },  
   { name: "Perfil", icon: User, path: "/dashboard/perfil" },
   { name: "Cadastrar", icon: UserPlus, path: "/dashboard/cadastrar" },
+ 
 ];
 
 export default function Sidebar() {
