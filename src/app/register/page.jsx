@@ -1,13 +1,16 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "sonner"; // Recomendado para feedback visual
 import Input from "../../components/Input";
-import ActionButton from "../../components/ActionButton"; // Componente Reutilizável Atualizado
+import ActionButton from "../../components/ActionButton"; 
 import Footer from "../../components/Footer";
 
 export default function RegisterPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,20 +22,40 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError("");
 
-    // Simulação de delay para registro
-    setTimeout(() => {
-      if (email && password) {
-        if (password.length < 6) {
-          setError("A SENHA DEVE TER PELO MENOS 6 CARACTERES.");
-          setIsLoading(false);
-          return;
-        }
-        router.push("/login"); 
-      } else {
-        setError("PREENCHA TODOS OS CAMPOS CORRETAMENTE.");
-        setIsLoading(false);
+    // Validação básica de segurança no client
+    if (password.length < 6) {
+      setError("A SENHA DEVE TER PELO MENOS 6 CARACTERES.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Chamada real para a API que criamos no backend Vercel/Neon
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "ERRO AO CRIAR CONTA.");
       }
-    }, 1000);
+
+      // Sucesso: Feedback e Redirecionamento
+      toast.success("CONTA CRIADA COM SUCESSO!");
+      router.push("/login");
+
+    } catch (err) {
+      setError(err.message.toUpperCase());
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -55,7 +78,7 @@ export default function RegisterPage() {
           </header>
 
           {/* Card de Registro */}
-          <div className="bg-white rounded-xl shadow-2xl p-8 pt-24 pb-10">
+          <div className="bg-white rounded-xl shadow-2xl p-8 pt-24 pb-10 border border-slate-100">
             <div className="text-center mb-8">
               <h2 className="text-xl font-bold text-slate-700">Nova Conta</h2>
               <p className="text-xs text-slate-500">Crie seu acesso administrativo abaixo</p>
@@ -63,12 +86,24 @@ export default function RegisterPage() {
             
             {/* Alerta de Erro */}
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-2 mb-6 animate-shake">
-                <p className="text-red-700 text-[10px] text-center font-bold uppercase tracking-wider">{error}</p>
+              <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-6 animate-shake">
+                <p className="text-red-700 text-[10px] text-center font-bold uppercase tracking-wider">
+                  {error}
+                </p>
               </div>
             )}
 
-            <form onSubmit={handleRegister} className="space-y-6">
+            <form onSubmit={handleRegister} className="space-y-5">
+              {/* Campo Nome */}
+              <Input 
+                label="NOME COMPLETO" 
+                type="text" 
+                placeholder="Ex: Cb. Silva" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                required 
+              />
+
               {/* Campo E-mail */}
               <Input 
                 label="E-MAIL" 
@@ -89,7 +124,7 @@ export default function RegisterPage() {
                 required 
               />
               
-              {/* 🛡️ Uso do ActionButton Reutilizável */}
+              {/* Botão de Ação Reutilizável */}
               <div className="pt-2">
                 <ActionButton 
                   label="CRIAR MINHA CONTA"

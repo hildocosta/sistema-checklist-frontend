@@ -1,11 +1,12 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { signIn } from "next-auth/react"; // Importação vital para o login real
 import Input from "../../components/Input";
 import ActionButton from "../../components/ActionButton"; 
-import { loginUser } from "../../utils/auth";
 import Footer from "../../components/Footer";
 
 export default function LoginPage() {
@@ -20,15 +21,26 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
-    // Simulação de delay para autenticação
-    setTimeout(() => {
-      if (loginUser(email, password)) {
-        router.push("/dashboard");
-      } else {
+    try {
+      // Chama o NextAuth para validar as credenciais no servidor
+      const result = await signIn("credentials", {
+        email: email,
+        password: password,
+        redirect: false, // Impede o NextAuth de fazer reload na página
+      });
+
+      if (result?.error) {
+        // Erro retornado pelo arquivo api/auth/[...nextauth]/route.js
         setError("E-MAIL OU SENHA INVÁLIDOS.");
         setIsLoading(false);
+      } else {
+        // Login com sucesso! Redireciona para o Dashboard
+        router.push("/dashboard");
       }
-    }, 800);
+    } catch (err) {
+      setError("ERRO DE CONEXÃO COM O SERVIDOR.");
+      setIsLoading(false);
+    }
   };
 
   return (
