@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import Breadcrumb from "../../components/Breadcrumb";
 import Skeleton from "../../components/Skeleton";
+export const dynamic = 'force-dynamic';
 
 // Dados simulados com curva de atividade
 const dadosAtividadeTurno = [
