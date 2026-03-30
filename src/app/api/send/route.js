@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { PrismaClient } from "@prisma/client";
+export const dynamic = 'force-dynamic';
+
 
 // Instância do Prisma para uso futuro (ex: logar quem enviou o relatório)
 const prisma = new PrismaClient();
