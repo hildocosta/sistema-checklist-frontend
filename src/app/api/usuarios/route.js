@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
+export const dynamic = 'force-dynamic';
 
 // GET: Lista todos os militares
 export async function GET() {
