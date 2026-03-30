@@ -77,44 +77,60 @@ export default function PerfilPage() {
 
       <div className="flex flex-col lg:flex-row gap-8">
         
-        {/* --- CARD LATERAL (RESUMO) --- */}
+        {/* --- CARD LATERAL (RESUMO LAPIDADO) --- */}
         {isLoading ? (
           <Skeleton className="w-full lg:w-1/3 h-105 rounded-3xl" />
         ) : (
           <div className="w-full lg:w-1/3 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-105">
-            <div className="h-28 bg-linear-to-r from-slate-800 to-slate-900 relative">
+            {/* Header com degradê sutil */}
+            <div className="h-32 bg-gradient-to-br from-slate-800 to-slate-900 relative">
               <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
-                <div className="relative group cursor-pointer">
-                  <div className="w-24 h-24 rounded-full border-4 border-white bg-slate-200 overflow-hidden shadow-lg flex items-center justify-center">
-                    <User size={40} className="text-slate-400" />
+                <div className="relative group">
+                  <div className="w-28 h-28 rounded-2xl border-4 border-white bg-slate-50 overflow-hidden shadow-xl flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
+                    <User size={48} className="text-slate-300" />
                   </div>
-                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Camera size={20} className="text-white" />
-                  </div>
+                  <button className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-lg shadow-lg border-2 border-white hover:bg-blue-700 transition-colors">
+                    <Camera size={16} />
+                  </button>
                 </div>
               </div>
             </div>
 
-            <div className="pt-16 pb-8 px-6 text-center grow flex flex-col justify-center">
-              <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
-                {user.nome || "Usuário"}
+            {/* Conteúdo Centralizado */}
+            <div className="pt-16 pb-10 px-6 text-center flex flex-col items-center">
+              <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+                {user.nome || "Hildo Pereira Costa"}
               </h2>
-              <p className="text-xs font-black text-blue-600 uppercase tracking-widest mt-1 italic">
-                {user.posto} • RE {user.re}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">{user.posto}</span>
+                <span className="text-slate-300">•</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">RE {user.re}</span>
+              </div>
               
-              <div className="mt-8 space-y-3">
-                <div className="flex items-center gap-3 text-slate-500 text-[11px] font-bold bg-slate-50 p-4 rounded-xl border border-slate-100 italic">
-                  <Building2 size={16} className="text-blue-500 shrink-0" /> {user.unidade}
+              {/* Divisor sutil */}
+              <div className="w-full h-px bg-slate-100 my-8"></div>
+
+              {/* Infos de Lotação */}
+              <div className="w-full space-y-3">
+                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-left transition-colors hover:bg-slate-100/50">
+                  <Building2 size={18} className="text-blue-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Unidade</p>
+                    <p className="text-xs font-bold text-slate-600 leading-tight">{user.unidade}</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-slate-500 text-[11px] font-bold bg-slate-50 p-4 rounded-xl border border-slate-100 italic">
-                  <Shield size={16} className="text-blue-500 shrink-0" /> {user.setor}
+
+                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-left transition-colors hover:bg-slate-100/50">
+                  <MapPin size={18} className="text-blue-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Setor / Seção</p>
+                    <p className="text-xs font-bold text-slate-600 leading-tight">{user.setor}</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
-
         {/* --- FORMULÁRIO --- */}
         <div className="w-full lg:w-2/3 flex flex-col gap-6">
           {isLoading ? (
