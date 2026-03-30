@@ -1,5 +1,7 @@
 "use client";
+
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { 
   User, Mail, Shield, MapPin, Camera, Save, Lock, 
   Award, CheckCircle2, Loader2, KeyRound 
@@ -11,24 +13,36 @@ import ActionButton from "../../../components/ActionButton";
 import Skeleton from "../../../components/Skeleton";
 
 export default function PerfilPage() {
+  const { data: session, status } = useSession(); // Busca sessão real do backend
+  
   const [user, setUser] = useState({
-    nome: "Anderson Silva",
-    posto: "1º Sargento",
-    re: "123.456-7",
-    email: "sargento.silva@pm.pr.gov.br",
-    setor: "P4 - Logística",
-    unidade: "17º BPM - São José dos Pinhais",
-    telefone: "(41) 99999-0000"
+    nome: "",
+    email: "",
+    posto: "Posto/Graduação", // Campo a ser expandido no backend
+    re: "000.000-0",           // Campo a ser expandido no backend
+    setor: "Não Informado",
+    unidade: "17º BPM",
+    telefone: ""
   });
 
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Efeito para alimentar os dados assim que a sessão estiver pronta
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
+    if (status === "authenticated" && session?.user) {
+      setUser((prev) => ({
+        ...prev,
+        nome: session.user.name || "",
+        email: session.user.email || "",
+        // Aqui, quando você tiver o RE no banco, ele viria via session.user.re
+      }));
+      setIsLoading(false);
+    } else if (status === "unauthenticated") {
+      setIsLoading(false);
+    }
+  }, [session, status]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,6 +52,8 @@ export default function PerfilPage() {
   const handleSave = (e) => {
     e.preventDefault();
     setIsSaving(true);
+    
+    // Futuramente aqui entrará um fetch(api/user/update)
     setTimeout(() => {
       setIsSaving(false);
       setShowSuccess(true);
@@ -65,7 +81,7 @@ export default function PerfilPage() {
 
       <div className="flex flex-col lg:flex-row gap-8">
         
-        {/* --- CARD LATERAL --- */}
+        {/* --- CARD LATERAL (RESUMO) --- */}
         {isLoading ? (
           <Skeleton className="w-full lg:w-1/3 h-105 rounded-3xl" />
         ) : (
@@ -84,8 +100,12 @@ export default function PerfilPage() {
             </div>
 
             <div className="pt-16 pb-8 px-6 text-center grow flex flex-col justify-center">
-              <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">{user.posto} {user.nome}</h2>
-              <p className="text-xs font-black text-blue-600 uppercase tracking-widest mt-1 italic">RE {user.re}</p>
+              <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
+                {user.nome || "Usuário"}
+              </h2>
+              <p className="text-xs font-black text-blue-600 uppercase tracking-widest mt-1 italic">
+                {user.posto} • RE {user.re}
+              </p>
               
               <div className="mt-8 space-y-3">
                 <div className="flex items-center gap-3 text-slate-500 text-[11px] font-bold bg-slate-50 p-4 rounded-xl border border-slate-100 italic">
@@ -116,22 +136,46 @@ export default function PerfilPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 items-end">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Nome Completo</label>
-                    <input name="nome" type="text" value={user.nome} onChange={handleChange} className="w-full h-13.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"/>
+                    <input 
+                      name="nome" 
+                      type="text" 
+                      value={user.nome} 
+                      onChange={handleChange} 
+                      className="w-full h-13.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"
+                    />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Registro (RE)</label>
-                    <input type="text" disabled value={user.re} className="w-full h-13.5 px-4 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-400 cursor-not-allowed font-mono font-bold"/>
+                    <input 
+                      type="text" 
+                      disabled 
+                      value={user.re} 
+                      className="w-full h-13.5 px-4 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-400 cursor-not-allowed font-mono font-bold"
+                    />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">E-mail Institucional</label>
-                    <input name="email" type="email" value={user.email} onChange={handleChange} className="w-full h-13.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"/>
+                    <input 
+                      name="email" 
+                      type="email" 
+                      value={user.email} 
+                      disabled
+                      className="w-full h-13.5 px-4 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-400 cursor-not-allowed font-medium"
+                    />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Telefone de Contato</label>
-                    <input name="telefone" type="text" value={user.telefone} onChange={handleChange} className="w-full h-13.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"/>
+                    <input 
+                      name="telefone" 
+                      type="text" 
+                      value={user.telefone} 
+                      onChange={handleChange} 
+                      placeholder="(00) 00000-0000"
+                      className="w-full h-13.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"
+                    />
                   </div>
                 </div>
 
@@ -145,7 +189,7 @@ export default function PerfilPage() {
                 </div>
               </form>
 
-              {/* --- SEÇÃO DE SEGURANÇA COM ACTIONBUTTON --- */}
+              {/* --- SEÇÃO DE SEGURANÇA --- */}
               <div className="bg-slate-950 rounded-3xl p-8 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
                 <div className="flex items-start gap-4 grow z-10 text-left">
                    <div className="bg-white/10 p-3 rounded-2xl border border-white/10 backdrop-blur-md">
@@ -154,7 +198,7 @@ export default function PerfilPage() {
                    <div>
                       <h3 className="text-sm font-bold mb-1 tracking-tight">Segurança da Conta</h3>
                       <p className="text-[11px] text-slate-400 font-light leading-relaxed max-w-sm italic">
-                        Última alteração de senha: <b className="text-white">22/02/2026</b>. Recomendamos a troca a cada 90 dias para sua proteção.
+                        Recomendamos a troca de senha periodicamente para sua proteção.
                       </p>
                    </div>
                 </div>
@@ -169,7 +213,6 @@ export default function PerfilPage() {
                   />
                 </div>
 
-                {/* Efeito visual de fundo */}
                 <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all"></div>
               </div>
             </>

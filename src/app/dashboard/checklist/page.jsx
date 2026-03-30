@@ -10,6 +10,7 @@ import {
   ChevronUp 
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { useSession } from "next-auth/react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -22,10 +23,21 @@ import ActionButton from "../../../components/ActionButton";
 import Skeleton from "../../../components/Skeleton";
 
 export default function ChecklistPage() {
+  const { data: session } = useSession();
   const [items, setItems] = useState(INVENTARIO_COMPLETO);
   const [isLoading, setIsLoading] = useState(true);
   const [abaAtiva, setAbaAtiva] = useState("armamento");
   const [showBackToTop, setShowBackToTop] = useState(false);
+
+  // --- LÓGICA DA BARRA DE PROGRESSO ---
+  const totalItens = items.length;
+  const itensConcluidos = items.filter(i => i.status === "ok").length;
+  const porcentagemProgresso = totalItens > 0 ? Math.round((itensConcluidos / totalItens) * 100) : 0;
+
+  // --- DADOS DO RESPONSÁVEL VIA SESSION ---
+  const responsavelFormatado = session?.user?.name 
+    ? `${session.user.posto || "Sd. QP PM"} ${session.user.name} - RE ${session.user.re || "000.000-0"}`
+    : "1º SGT ANDERSON SILVA - RE 123.456-7";
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1200);
@@ -121,7 +133,7 @@ export default function ChecklistPage() {
       doc.text(`Emissão: ${dataFormatada} às ${horaFormatada}`, 15, 55);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 41, 59);
-      doc.text(`Responsável: 1º SGT ANDERSON SILVA - RE 123.456-7`, 15, 60);
+      doc.text(`Responsável: ${responsavelFormatado}`, 15, 60);
 
       let currentY = 70;
 
@@ -225,17 +237,7 @@ export default function ChecklistPage() {
     <div className="animate-in fade-in duration-700 space-y-6 max-w-full mx-auto p-4 flex flex-col relative">
       <Toaster richColors position="top-right" closeButton />
       
-      {/* Botão Back to Top - Compacto e Alinhado à Direita */}
-      <button
-        onClick={scrollToTop}
-        className={`fixed bottom-6 right-4 z-[100] p-2 rounded-lg bg-blue-600/80 text-white shadow-lg backdrop-blur-sm transition-all duration-300 hover:bg-blue-600 active:scale-90 border border-white/20 ${
-          showBackToTop ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-75 pointer-events-none"
-        }`}
-        title="Voltar ao topo"
-      >
-        <ChevronUp size={18} strokeWidth={3} />
-      </button>
-
+      {/* 1. CABEÇALHO E AÇÕES */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 shrink-0">
         <div>
           <Breadcrumb itemAtual="Checklist Diário" />
@@ -247,6 +249,28 @@ export default function ChecklistPage() {
         </div>
       </div>
 
+      {/* 2. BARRA DE PROGRESSO (REPOSICIONADA: ABAIXO DOS BOTÕES E ACIMA DA NAV) */}
+      <div className="bg-white px-4 py-3 rounded-xl border border-slate-100 shadow-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progresso</span>
+            <span className="text-sm font-black text-blue-600 w-8">{porcentagemProgresso}%</span>
+          </div>
+          
+          <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full transition-all duration-1000 ease-in-out ${porcentagemProgresso === 100 ? 'bg-emerald-500' : 'bg-blue-600'}`}
+              style={{ width: `${porcentagemProgresso}%` }}
+            />
+          </div>
+
+          <div className="shrink-0 text-[10px] font-bold text-slate-400">
+            {itensConcluidos} / {totalItens} <span className="hidden sm:inline">ITENS</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. BARRA DE NAVEGAÇÃO (TABS) */}
       <div className="bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200 w-full overflow-hidden">
         <div className="flex flex-row justify-between gap-1 w-full overflow-x-auto no-scrollbar">
           {categorias.map((categoria) => {
@@ -282,6 +306,18 @@ export default function ChecklistPage() {
         </div>
       </div>
 
+      {/* Botão Back to Top */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-6 right-4 z-[100] p-2 rounded-lg bg-blue-600/80 text-white shadow-lg backdrop-blur-sm transition-all duration-300 hover:bg-blue-600 active:scale-90 border border-white/20 ${
+          showBackToTop ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-75 pointer-events-none"
+        }`}
+        title="Voltar ao topo"
+      >
+        <ChevronUp size={18} strokeWidth={3} />
+      </button>
+
+      {/* 4. CONTEÚDO / TABELA */}
       {isLoading ? (
         <div className="bg-white border border-slate-100 p-6 space-y-4 rounded-2xl">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
@@ -314,6 +350,7 @@ export default function ChecklistPage() {
         </div>
       )}
 
+      {/* 5. RODAPÉ DE FINALIZAÇÃO */}
       <div className="bg-white p-5 rounded-3xl border border-slate-100 flex flex-col md:flex-row justify-between items-center shadow-sm gap-6 shrink-0">
         <div className="flex gap-4 items-center">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors border ${isConferenciaCompleta ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-blue-50 text-blue-500 border-blue-100'}`}>
@@ -321,7 +358,7 @@ export default function ChecklistPage() {
           </div>
           <div className="text-left">
             <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Responsável Turno</p>
-            <p className="text-sm font-semibold text-slate-600 italic">1º SGT Anderson Silva - RE 123.456-7</p>
+            <p className="text-sm font-semibold text-slate-600 italic">{responsavelFormatado}</p>
           </div>
         </div>
 
