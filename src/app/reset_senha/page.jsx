@@ -1,8 +1,9 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import {ShieldCheck, AlertCircle } from "lucide-react";
+import { ShieldCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
 import Input from "../../components/Input";
 import ActionButton from "../../components/ActionButton";
 import Footer from "../../components/Footer";
@@ -10,6 +11,8 @@ import Footer from "../../components/Footer";
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -57,44 +60,64 @@ export default function ResetPasswordPage() {
             />
           </header>
 
-          <div className="bg-white rounded-xl shadow-2xl p-8 pt-24 pb-8 transition-all duration-500">
+          <div className="bg-white rounded-xl shadow-2xl p-8 pt-24 pb-10 transition-all duration-500 border border-slate-100">
             {!isSuccess ? (
               /* FORMULÁRIO DE NOVA SENHA */
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center mb-8">
                   <h2 className="text-xl font-bold text-slate-700 uppercase tracking-tight">Nova Senha</h2>
-                  <p className="text-[11px] text-slate-500 mt-2">
+                  <p className="text-xs text-slate-500 mt-2">
                     Crie uma combinação segura para o seu próximo acesso.
                   </p>
                 </div>
                 
                 {error && (
-                  <div className="bg-amber-50 border-l-4 border-amber-500 p-3 mb-6 flex items-center gap-3 animate-shake">
-                    <AlertCircle className="text-amber-600 shrink-0" size={18} />
-                    <p className="text-amber-800 text-[10px] font-bold uppercase leading-tight">
+                  <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-6 flex items-center gap-3 animate-shake">
+                    <AlertCircle className="text-red-600 shrink-0" size={18} />
+                    <p className="text-red-700 text-[10px] font-bold uppercase leading-tight">
                       {error}
                     </p>
                   </div>
                 )}
 
                 <form onSubmit={handleResetPassword} className="space-y-4">
+                  {/* CAMPO: NOVA SENHA */}
                   <Input 
                     label="NOVA SENHA" 
-                    type="password" 
+                    type={showPassword ? "text" : "password"} 
                     placeholder="••••••••" 
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)} 
                     required 
-                  />
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-blue-600 transition-colors"
+                      tabIndex="-1"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </Input>
 
+                  {/* CAMPO: CONFIRMAR NOVA SENHA */}
                   <Input 
                     label="CONFIRMAR NOVA SENHA" 
-                    type="password" 
+                    type={showConfirmPassword ? "text" : "password"} 
                     placeholder="••••••••" 
                     value={confirmPassword} 
                     onChange={(e) => setConfirmPassword(e.target.value)} 
                     required 
-                  />
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-blue-600 transition-colors"
+                      tabIndex="-1"
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </Input>
 
                   <div className="pt-4">
                     <ActionButton 
@@ -110,16 +133,16 @@ export default function ResetPasswordPage() {
             ) : (
               /* SUCESSO FINAL NA REDEFINIÇÃO */
               <div className="text-center animate-in fade-in zoom-in duration-500 py-2">
-                <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-blue-100">
-                  <ShieldCheck size={28} />
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-blue-100">
+                  <ShieldCheck size={32} />
                 </div>
                 
-                <h2 className="text-lg font-bold text-slate-800 uppercase tracking-wide mb-2">
+                <h2 className="text-lg font-bold text-slate-800 uppercase tracking-wide mb-3">
                   Senha Alterada!
                 </h2>
                 
-                <p className="text-[11px] text-slate-500 leading-relaxed mb-8 px-4">
-                  Sua nova credencial foi registrada com sucesso. Você já pode acessar o sistema.
+                <p className="text-xs text-slate-500 leading-relaxed mb-8 px-4">
+                  Sua nova credencial foi registrada com sucesso. Você já pode acessar o sistema com segurança.
                 </p>
 
                 <ActionButton 
