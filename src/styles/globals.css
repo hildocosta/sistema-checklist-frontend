@@ -29,7 +29,7 @@
   background-attachment: fixed;
 }
 
-/* HEADER DO CARD */
+/* HEADER DO CARD (Aquele azul flutuante no topo do login) */
 .card-header-floating {
   @apply absolute -top-12 left-1/2 -translate-x-1/2 w-[90%] 
          bg-linear-to-tr from-blue-600 to-blue-400 
@@ -64,24 +64,29 @@
          hover:bg-white/10;
 }
 
-
 .sidebar-item-active {
   @apply bg-linear-to-tr from-[#1a73e8] to-[#63a4ff] 
          text-white shadow-md shadow-blue-500/20;
 }
-
-
 
 .sidebar-footer-btn {
   @apply py-3 bg-linear-to-tr from-[#1a73e8] to-[#63a4ff] 
          text-white text-xs font-bold uppercase rounded-lg
          shadow-lg shadow-blue-500/40 text-center
          hover:scale-[1.02] transition-transform;
-  
 }
 
-/* FOCO DOS INPUTS */
-input:focus {
-  outline: 2px solid var(--color-material-blue);
-  outline-offset: 2px;
+
+input:focus, 
+button:focus, 
+textarea:focus {
+  outline: none !important;
+  border-color: #1A73E8 !important;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Efeito de transição suave para inputs normais */
+input {
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
