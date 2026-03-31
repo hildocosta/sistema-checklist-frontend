@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { 
-  UserPlus, ShieldCheck, ShieldAlert, 
-  Mail, Shield, Loader2, Save, X 
+  ShieldCheck, ShieldAlert, Edit3,
+  Mail, Shield, Loader2, Save, X, User 
 } from "lucide-react";
 
 import Breadcrumb from "../../../components/Breadcrumb";
@@ -25,7 +25,9 @@ export default function UsuariosPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  const [novoMilitar, setNovoMilitar] = useState({
+  // Controle de Edição
+  const [editandoId, setEditandoId] = useState(null);
+  const [dadosMilitar, setDadosMilitar] = useState({
     nome: "", posto: "Soldado", re: "", email: "", nivel: "Operador", status: "Ativo"
   });
 
@@ -47,31 +49,37 @@ export default function UsuariosPage() {
     carregarUsuarios();
   }, []);
 
-  const colunas = [
-    { label: "Militar / RE", align: "left" },
-    { label: "E-mail Institucional", align: "left" },
-    { label: "Nível", align: "center" },
-    { label: "Status", align: "center" },
-    { label: "Ações", align: "right" },
-  ];
+  // Abrir modal preenchido
+  const handleEditClick = (u) => {
+    setEditandoId(u.id);
+    setDadosMilitar({
+      nome: u.name || u.nome || "",
+      posto: u.posto || "Soldado",
+      re: u.re || "",
+      email: u.email || "",
+      nivel: u.nivel || "Operador",
+      status: u.status || "Ativo"
+    });
+    setIsModalOpen(true);
+  };
 
-  const handleCadastrar = async (e) => {
+  const handleSalvarAlteracoes = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const response = await fetch("/api/usuarios", {
-        method: "POST",
+      const response = await fetch(`/api/usuarios/${editandoId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(novoMilitar),
+        body: JSON.stringify(dadosMilitar),
       });
 
       if (response.ok) {
         await carregarUsuarios();
         setIsModalOpen(false);
-        setNovoMilitar({ nome: "", posto: "Soldado", re: "", email: "", nivel: "Operador", status: "Ativo" });
+        setEditandoId(null);
       }
     } catch (error) {
-      console.error("Erro ao cadastrar:", error);
+      console.error("Erro ao atualizar:", error);
     } finally {
       setIsSaving(false);
     }
@@ -84,7 +92,6 @@ export default function UsuariosPage() {
     }
   };
 
-  // Ajuste do Filtro para aceitar 'name' ou 'nome'
   const usuariosFiltrados = usuarios.filter(u => {
     const nomeBase = (u.name || u.nome || "").toLowerCase();
     const reBase = (u.re || "").toLowerCase();
@@ -96,24 +103,25 @@ export default function UsuariosPage() {
     <div className="animate-in fade-in duration-700 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
         <div>
-          <Breadcrumb itemAtual="Usuários" />
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Gestão de Efetivo e Acessos</h1>
+          <Breadcrumb itemAtual="Gestão de Usuários" />
+          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Efetivo e Níveis de Acesso</h1>
         </div>
-        <ActionButton onClick={() => setIsModalOpen(true)} icon={UserPlus} label="Adicionar Usuário" />
       </div>
 
+      {/* Cards de Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {isLoading ? (
           <><Skeleton className="h-32 rounded-3xl" /><Skeleton className="h-32 rounded-3xl" /><Skeleton className="h-32 rounded-3xl" /></>
         ) : (
           <>
             <StatCard label="Administradores" value={usuarios.filter(u => u.nivel === 'Admin').length.toString().padStart(2, '0')} icon={ShieldCheck} color="blue" />
-            <StatCard label="Total Ativos" value={usuarios.filter(u => u.status === 'Ativo').length.toString().padStart(2, '0')} icon={UserPlus} color="emerald" />
+            <StatCard label="Militares Ativos" value={usuarios.filter(u => u.status === 'Ativo').length.toString().padStart(2, '0')} icon={User} color="emerald" />
             <StatCard label="Acessos Bloqueados" value={usuarios.filter(u => u.status === 'Inativo').length.toString().padStart(2, '0')} icon={ShieldAlert} color="red" />
           </>
         )}
       </div>
 
+      {/* Tabela de Dados */}
       {isLoading ? (
         <div className="bg-white rounded-3xl border border-slate-100 p-8 space-y-4">
           <Skeleton className="h-10 w-64 rounded-xl" />
@@ -121,67 +129,138 @@ export default function UsuariosPage() {
         </div>
       ) : (
         <DataTable 
-          columns={colunas}
+          columns={[
+            { label: "Militar / RG", align: "left" },
+            { label: "E-mail Institucional", align: "left" },
+            { label: "Nível", align: "center" },
+            { label: "Status", align: "center" },
+            { label: "Ações", align: "right" },
+          ]}
           data={usuariosFiltrados}
-          searchPlaceholder="Buscar por nome ou RE..."
+          searchPlaceholder="Filtrar por nome ou RG..."
           searchValue={busca}
           onSearchChange={(e) => setBusca(e.target.value)}
-          renderRow={(u) => {
-            const nomeFinal = u.name || u.nome || "Militar";
-            return (
-              <tr key={u.id} className="hover:bg-slate-50/50 transition group border-b border-slate-50 last:border-0">
-                <td className="px-8 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 uppercase border border-slate-200">
-                      {nomeFinal.charAt(0)}
-                    </div>
-                    <div className="flex flex-col text-left">
-                      <span className="text-sm font-bold text-slate-700 leading-tight">{u.posto} {nomeFinal}</span>
-                      <span className="text-[10px] text-blue-600 font-mono font-bold tracking-tight">RE {u.re || 'S/R'}</span>
-                    </div>
+          renderRow={(u) => (
+            <tr key={u.id} className="hover:bg-slate-50/50 transition group border-b border-slate-50 last:border-0">
+              <td className="px-8 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 uppercase border border-slate-200">
+                    {(u.name || u.nome || "M").charAt(0)}
                   </div>
-                </td>
-                <td className="px-8 py-4">
-                  <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                    <Mail size={12} className="text-slate-300" /> {u.email}
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-bold text-slate-700 leading-tight">{u.posto} {u.name || u.nome}</span>
+                    <span className="text-[12px] text-blue-600 font-mono font-bold tracking-tight">RE {u.re || '---'}</span>
                   </div>
-                </td>
-                <td className="px-8 py-4 text-center"><PermissionBadge level={u.nivel || 'Operador'} /></td>
-                <td className="px-8 py-4 text-center"><StatusBadge status={u.status || 'Ativo'} /></td>
-                <td className="px-8 py-4 text-right">
-                  <TableActions showView={false} onEdit={() => console.log("Edit", u.id)} onDelete={() => handleDelete(u.id)} />
-                </td>
-              </tr>
-            );
-          }}
+                </div>
+              </td>
+              <td className="px-8 py-4">
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium text-left">
+                  <Mail size={12} className="text-slate-300" /> {u.email}
+                </div>
+              </td>
+              <td className="px-8 py-4 text-center"><PermissionBadge level={u.nivel || 'Operador'} /></td>
+              <td className="px-8 py-4 text-center"><StatusBadge status={u.status || 'Ativo'} /></td>
+              <td className="px-8 py-4 text-right">
+                <TableActions showView={false} onEdit={() => handleEditClick(u)} onDelete={() => handleDelete(u.id)} />
+              </td>
+            </tr>
+          )}
         />
       )}
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Novo Militar" subtitle="Cadastro de Acesso" icon={UserPlus}>
-        <form onSubmit={handleCadastrar} className="space-y-6 text-left">
-          <div className="grid grid-cols-2 gap-4">
-            <FormSelect label="Posto" value={novoMilitar.posto} onChange={(e) => setNovoMilitar({...novoMilitar, posto: e.target.value})} options={['Soldado', 'Cabo', '3º Sargento', '2º Sargento', '1º Sargento', 'Subtenente', 'Tenente', 'Capitão', 'Major']} />
-            <FormInput label="RE" required placeholder="000.000-0" value={novoMilitar.re} onChange={(e) => setNovoMilitar({...novoMilitar, re: e.target.value})} />
+      {/* Modal Unificado de Edição */}
+      
+     <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => {setIsModalOpen(false); setEditandoId(null);}} 
+        title="Editar Militar" 
+        subtitle="Acesso e Permissões" 
+        icon={Edit3}
+      >
+        <form onSubmit={handleSalvarAlteracoes} className="space-y-3 text-left">
+          {/* Linha 1: Posto e RE */}
+          <div className="grid grid-cols-2 gap-3">
+            <FormSelect 
+                label="Posto" 
+                value={dadosMilitar.posto} 
+                onChange={(e) => setDadosMilitar({...dadosMilitar, posto: e.target.value})} 
+                options={['Sd. QP PM', 'Cb. QP PM', '3º Sgt. QP PM', '2º Sgt. QP PM', '1º Sgt. QP PM', 'Subtenente QP PM', 'Asp. Of. PM','2º Ten. QOEM PM', '1º Ten. QOEM PM', 'Cap. QOEM PM', 'Major QOEM PM', 'Ten.-Cel. QOEM PM', 'Cel. QOEM PM']} 
+            />
+            <FormInput label="RG" required value={dadosMilitar.re} onChange={(e) => setDadosMilitar({...dadosMilitar, re: e.target.value})} />
           </div>
-          <FormInput label="Nome Completo" required placeholder="Ex: Anderson Silva" value={novoMilitar.nome} onChange={(e) => setNovoMilitar({...novoMilitar, nome: e.target.value})} />
-          <FormInput label="E-mail" type="email" required placeholder="nome@pm.pr.gov.br" value={novoMilitar.email} onChange={(e) => setNovoMilitar({...novoMilitar, email: e.target.value})} />
           
-          <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-4">
-            <div className="bg-white p-2.5 rounded-xl shadow-sm h-fit"><Shield size={18} className="text-blue-600" /></div>
-            <div className="grow space-y-3">
-              <p className="text-[11px] font-bold text-blue-900 uppercase">Nível de Permissão</p>
-              <div className="flex gap-2">
+          {/* Linha 2: Nome */}
+          <FormInput label="Nome Completo" required value={dadosMilitar.nome} onChange={(e) => setDadosMilitar({...dadosMilitar, nome: e.target.value})} />
+          
+          {/* Linha 3: E-mail (Compacto) */}
+          <div className="relative">
+             <FormInput label="E-mail Institucional" disabled value={dadosMilitar.email} className="bg-slate-50/50 opacity-60 text-[11px]" />
+          </div>
+          
+          {/* Linha 4: Nível e Status Lado a Lado (Super Compacto) */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            {/* Seletor de Nível */}
+            <div className="p-2.5 bg-blue-50/30 rounded-xl border border-blue-100/50 space-y-2">
+              <p className="text-[9px] font-black text-blue-900/50 uppercase tracking-widest flex items-center gap-1">
+                <Shield size={10} /> Nível
+              </p>
+              <div className="flex gap-1">
                 {['Operador', 'Gestor', 'Admin'].map((level) => (
-                  <button key={level} type="button" onClick={() => setNovoMilitar({...novoMilitar, nivel: level})}
-                    className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase transition ${novoMilitar.nivel === level ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-slate-400 border border-slate-200'}`}>{level}</button>
+                  <button 
+                    key={level} 
+                    type="button" 
+                    onClick={() => setDadosMilitar({...dadosMilitar, nivel: level})}
+                    className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
+                      dadosMilitar.nivel === level ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-400 border border-slate-200'
+                    }`}
+                  >
+                    {level.charAt(0)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Seletor de Status */}
+            <div className="p-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 space-y-2">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                <ShieldAlert size={10} /> Status
+              </p>
+              <div className="flex gap-1">
+                {['Ativo', 'Inativo'].map((status) => (
+                  <button 
+                    key={status} 
+                    type="button" 
+                    onClick={() => setDadosMilitar({...dadosMilitar, status: status})}
+                    className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
+                        dadosMilitar.status === status 
+                        ? (status === 'Ativo' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') 
+                        : 'bg-white text-slate-400 border border-slate-200'
+                    }`}
+                  >
+                    {status === 'Ativo' ? 'Ativo' : 'Off'}
+                  </button>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="flex gap-4 pt-2">
-            <ActionButton type="button" onClick={() => setIsModalOpen(false)} icon={X} label="Cancelar" variant="outline" className="flex-1 h-14! border-slate-100 text-slate-400" />
-            <ActionButton type="submit" disabled={isSaving} icon={isSaving ? Loader2 : Save} label={isSaving ? "Gravando..." : "Confirmar Cadastro"} className={`flex-[1.5] h-14! ${isSaving ? "animate-pulse" : ""}`} />
+          {/* Rodapé: Botões Menores */}
+          <div className="flex gap-3 pt-3 border-t border-slate-100 mt-1">
+            <ActionButton 
+              type="button" 
+              onClick={() => setIsModalOpen(false)} 
+              icon={X} 
+              label="Sair" 
+              variant="outline" 
+              className="flex-1 h-10! text-[11px]" 
+            />
+            <ActionButton 
+              type="submit" 
+              disabled={isSaving} 
+              icon={isSaving ? Loader2 : Save} 
+              label={isSaving ? "Aguarde..." : "Gravar"} 
+              className={`flex-1 h-10! text-[11px] ${isSaving ? "animate-pulse" : "bg-blue-600"}`} 
+            />
           </div>
         </form>
       </Modal>
