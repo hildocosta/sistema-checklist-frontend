@@ -18,10 +18,10 @@ export default function PerfilPage() {
   const [user, setUser] = useState({
     nome: "",
     email: "",
-    posto: "Soldado", 
-    re: "000.000-0",           
-    setor: "P4 - Logística",
-    unidade: "17º BPM - São José dos Pinhais",
+    posto: "", 
+    re: "",           
+    setor: "",
+    unidade: "",
     telefone: "",
     nivelAcesso: "Operador (Checklist)"
   });
@@ -30,17 +30,38 @@ export default function PerfilPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // 1. CARREGAR DADOS DO BANCO AO ABRIR A PÁGINA
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      setUser((prev) => ({
-        ...prev,
-        nome: session.user.name || "",
-        email: session.user.email || "",
-      }));
-      setIsLoading(false);
-    } else if (status === "unauthenticated") {
-      setIsLoading(false);
+    async function carregarDadosIniciais() {
+      if (status === "authenticated" && session?.user?.email) {
+        try {
+          
+          const response = await fetch("/api/user/update");
+          const dadosDoBanco = await response.json();
+
+          if (response.ok) {
+            setUser({
+              nome: dadosDoBanco.name || session.user.name || "",
+              email: dadosDoBanco.email || session.user.email || "",
+              posto: dadosDoBanco.posto || "",
+              re: dadosDoBanco.re || "",
+              setor: dadosDoBanco.setor || "",
+              unidade: dadosDoBanco.unidade || "17º BPM",
+              telefone: dadosDoBanco.telefone || "",
+              nivelAcesso: ""
+            });
+          }
+        } catch (error) {
+          console.error("Erro ao buscar dados do perfil:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (status === "unauthenticated") {
+        setIsLoading(false);
+      }
     }
+
+    carregarDadosIniciais();
   }, [session, status]);
 
   const handleChange = (e) => {
@@ -48,15 +69,37 @@ export default function PerfilPage() {
     setUser(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = (e) => {
+  // 2. SALVAR DADOS NO BANCO NEON/VERCEL
+  const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/user/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: user.nome,
+          posto: user.posto,
+          unidade: user.unidade,
+          setor: user.setor,
+          telefone: user.telefone,
+          re: user.re
+        }),
+      });
+
+      if (response.ok) {
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      } else {
+        const errorData = await response.json();
+        alert("Erro ao salvar: " + (errorData.error || "Erro desconhecido"));
+      }
+    } catch (error) {
+      alert("Erro de conexão com o servidor.");
+    } finally {
       setIsSaving(false);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    }, 1500);
+    }
   };
 
   return (
@@ -77,40 +120,36 @@ export default function PerfilPage() {
 
       <div className="flex flex-col lg:flex-row gap-8">
         
-        {/* --- CARD LATERAL (RESUMO LAPIDADO) --- */}
+        {/* --- CARD LATERAL (RESUMO) --- */}
         {isLoading ? (
           <Skeleton className="w-full lg:w-1/3 h-105 rounded-3xl" />
         ) : (
           <div className="w-full lg:w-1/3 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-105">
-            {/* Header com degradê sutil */}
             <div className="h-32 bg-gradient-to-br from-slate-800 to-slate-900 relative">
               <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
                 <div className="relative group">
                   <div className="w-28 h-28 rounded-2xl border-4 border-white bg-slate-50 overflow-hidden shadow-xl flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
                     <User size={48} className="text-slate-300" />
                   </div>
-                  <button className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-lg shadow-lg border-2 border-white hover:bg-blue-700 transition-colors">
+                  <button type="button" className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-lg shadow-lg border-2 border-white hover:bg-blue-700 transition-colors">
                     <Camera size={16} />
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Conteúdo Centralizado */}
             <div className="pt-16 pb-10 px-6 text-center flex flex-col items-center">
               <h2 className="text-xl font-bold text-slate-800 tracking-tight">
-                {user.nome || "Hildo Pereira Costa"}
+                {user.nome || "Militar"}
               </h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">{user.posto}</span>
                 <span className="text-slate-300">•</span>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">RE {user.re}</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">RG {user.re || "---.---"}</span>
               </div>
               
-              {/* Divisor sutil */}
               <div className="w-full h-px bg-slate-100 my-8"></div>
 
-              {/* Infos de Lotação */}
               <div className="w-full space-y-3">
                 <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-left transition-colors hover:bg-slate-100/50">
                   <Building2 size={18} className="text-blue-500 shrink-0 mt-0.5" />
@@ -131,6 +170,7 @@ export default function PerfilPage() {
             </div>
           </div>
         )}
+
         {/* --- FORMULÁRIO --- */}
         <div className="w-full lg:w-2/3 flex flex-col gap-6">
           {isLoading ? (
@@ -143,7 +183,6 @@ export default function PerfilPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 items-end">
                 
-                {/* NOME COMPLETO */}
                 <div className="space-y-1.5 md:col-span-2">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Nome Completo</label>
                   <div className="relative">
@@ -158,7 +197,6 @@ export default function PerfilPage() {
                   </div>
                 </div>
 
-                {/* POSTO / GRADUAÇÃO */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Posto / Graduação</label>
                   <div className="relative">
@@ -173,21 +211,21 @@ export default function PerfilPage() {
                   </div>
                 </div>
 
-                {/* REGISTRO (RE) */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Registro (RE)</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Registro (RG)</label>
                   <div className="relative">
                     <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
+                      name="re"
                       type="text" 
-                      disabled 
                       value={user.re} 
-                      className="w-full h-13.5 pl-12 pr-4 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-400 cursor-not-allowed font-mono font-bold"
+                      onChange={handleChange}
+                      placeholder="000.000-0"
+                      className="w-full h-13.5 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"
                     />
                   </div>
                 </div>
 
-                {/* UNIDADE */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Lotação (Unidade)</label>
                   <div className="relative">
@@ -202,7 +240,6 @@ export default function PerfilPage() {
                   </div>
                 </div>
 
-                {/* SETOR */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Setor / Seção</label>
                   <div className="relative">
@@ -217,7 +254,6 @@ export default function PerfilPage() {
                   </div>
                 </div>
 
-                {/* EMAIL */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">E-mail Institucional</label>
                   <div className="relative">
@@ -232,7 +268,6 @@ export default function PerfilPage() {
                   </div>
                 </div>
 
-                {/* TELEFONE */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Telefone de Contato</label>
                   <div className="relative">
@@ -248,7 +283,6 @@ export default function PerfilPage() {
                   </div>
                 </div>
 
-                {/* NÍVEL DE PERMISSÃO */}
                 <div className="space-y-1.5 md:col-span-2">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Nível de Permissão</label>
                   <div className="relative">
