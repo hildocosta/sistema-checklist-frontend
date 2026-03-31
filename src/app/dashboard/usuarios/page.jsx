@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   ShieldCheck, ShieldAlert, Edit3,
-  Mail, Shield, Loader2, Save, X, User 
+  Mail, Shield, Loader2, Save, X, User, Trash2 
 } from "lucide-react";
 
 import Breadcrumb from "../../../components/Breadcrumb";
@@ -23,10 +23,14 @@ export default function UsuariosPage() {
   const [busca, setBusca] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Controle de Edição
+  // Modais
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  // Seleção
   const [editandoId, setEditandoId] = useState(null);
+  const [usuarioParaExcluir, setUsuarioParaExcluir] = useState(null);
   const [dadosMilitar, setDadosMilitar] = useState({
     nome: "", posto: "Soldado", re: "", email: "", nivel: "Operador", status: "Ativo"
   });
@@ -35,9 +39,7 @@ export default function UsuariosPage() {
     try {
       const response = await fetch("/api/usuarios");
       const data = await response.json();
-      if (Array.isArray(data)) {
-        setUsuarios(data);
-      }
+      if (Array.isArray(data)) setUsuarios(data);
     } catch (error) {
       console.error("Erro ao carregar usuários:", error);
     } finally {
@@ -49,7 +51,7 @@ export default function UsuariosPage() {
     carregarUsuarios();
   }, []);
 
-  // Abrir modal preenchido
+  // --- Lógica de Edição ---
   const handleEditClick = (u) => {
     setEditandoId(u.id);
     setDadosMilitar({
@@ -85,10 +87,28 @@ export default function UsuariosPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (confirm("Deseja realmente remover este acesso?")) {
-      await fetch(`/api/usuarios/${id}`, { method: "DELETE" });
-      carregarUsuarios();
+  // --- Lógica de Exclusão ---
+  const handleOpenDeleteModal = (u) => {
+    setUsuarioParaExcluir(u);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!usuarioParaExcluir) return;
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/usuarios/${usuarioParaExcluir.id}`, { 
+        method: "DELETE" 
+      });
+      if (response.ok) {
+        await carregarUsuarios();
+        setIsDeleteModalOpen(false);
+        setUsuarioParaExcluir(null);
+      }
+    } catch (error) {
+      console.error("Erro ao deletar:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -161,51 +181,49 @@ export default function UsuariosPage() {
               <td className="px-8 py-4 text-center"><PermissionBadge level={u.nivel || 'Operador'} /></td>
               <td className="px-8 py-4 text-center"><StatusBadge status={u.status || 'Ativo'} /></td>
               <td className="px-8 py-4 text-right">
-                <TableActions showView={false} onEdit={() => handleEditClick(u)} onDelete={() => handleDelete(u.id)} />
+                <TableActions 
+                  showView={false} 
+                  onEdit={() => handleEditClick(u)} 
+                  onDelete={() => handleOpenDeleteModal(u)} 
+                />
               </td>
             </tr>
           )}
         />
       )}
 
-      {/* Modal Unificado de Edição */}
-      
-     <Modal 
+      {/* MODAL 1: EDIÇÃO */}
+      <Modal 
         isOpen={isModalOpen} 
         onClose={() => {setIsModalOpen(false); setEditandoId(null);}} 
         title="Editar Militar" 
-        subtitle="Acesso e Permissões" 
+        subtitle="Gerenciar Permissões e Status" 
         icon={Edit3}
       >
         <form onSubmit={handleSalvarAlteracoes} className="space-y-3 text-left">
-          {/* Linha 1: Posto e RE */}
           <div className="grid grid-cols-2 gap-3">
             <FormSelect 
-                label="Posto" 
-                value={dadosMilitar.posto} 
-                onChange={(e) => setDadosMilitar({...dadosMilitar, posto: e.target.value})} 
-                options={['Sd. QP PM', 'Cb. QP PM', '3º Sgt. QP PM', '2º Sgt. QP PM', '1º Sgt. QP PM', 'Subtenente QP PM', 'Asp. Of. PM','2º Ten. QOEM PM', '1º Ten. QOEM PM', 'Cap. QOEM PM', 'Major QOEM PM', 'Ten.-Cel. QOEM PM', 'Cel. QOEM PM']} 
+              label="Posto" 
+              value={dadosMilitar.posto} 
+              onChange={(e) => setDadosMilitar({...dadosMilitar, posto: e.target.value})} 
+              options={['Sd. QP PM', 'Cb. QP PM', '3º Sgt. QP PM', '2º Sgt. QP PM', '1º Sgt. QP PM', 'Subtenente QP PM', 'Asp. Of. PM','2º Ten. QOEM PM', '1º Ten. QOEM PM', 'Cap. QOEM PM', 'Major QOEM PM', 'Ten.-Cel. QOEM PM', 'Cel. QOEM PM']} 
             />
             <FormInput label="RG" required value={dadosMilitar.re} onChange={(e) => setDadosMilitar({...dadosMilitar, re: e.target.value})} />
           </div>
           
-          {/* Linha 2: Nome */}
           <FormInput label="Nome Completo" required value={dadosMilitar.nome} onChange={(e) => setDadosMilitar({...dadosMilitar, nome: e.target.value})} />
           
-          {/* Linha 3: E-mail (Compacto) */}
           <div className="relative">
              <FormInput label="E-mail Institucional" disabled value={dadosMilitar.email} className="bg-slate-50/50 opacity-60 text-[11px]" />
           </div>
           
-          {/* Linha 4: Nível e Status Lado a Lado (Super Compacto) */}
           <div className="grid grid-cols-2 gap-3 pt-1">
-            {/* Seletor de Nível */}
             <div className="p-2.5 bg-blue-50/30 rounded-xl border border-blue-100/50 space-y-2">
               <p className="text-[9px] font-black text-blue-900/50 uppercase tracking-widest flex items-center gap-1">
-                <Shield size={10} /> Nível
+                <Shield size={10} /> Nível de Permissão
               </p>
               <div className="flex gap-1">
-                {['Operador', 'Gestor', 'Admin'].map((level) => (
+                {['Admin', 'Gestor', 'Operador'].map((level) => (
                   <button 
                     key={level} 
                     type="button" 
@@ -214,16 +232,15 @@ export default function UsuariosPage() {
                       dadosMilitar.nivel === level ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-400 border border-slate-200'
                     }`}
                   >
-                    {level.charAt(0)}
+                    {level}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Seletor de Status */}
             <div className="p-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 space-y-2">
               <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                <ShieldAlert size={10} /> Status
+                <ShieldAlert size={10} /> Status do Acesso
               </p>
               <div className="flex gap-1">
                 {['Ativo', 'Inativo'].map((status) => (
@@ -237,32 +254,58 @@ export default function UsuariosPage() {
                         : 'bg-white text-slate-400 border border-slate-200'
                     }`}
                   >
-                    {status === 'Ativo' ? 'Ativo' : 'Off'}
+                    {status === 'Ativo' ? 'Ativo' : 'Bloqueado'}
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Rodapé: Botões Menores */}
           <div className="flex gap-3 pt-3 border-t border-slate-100 mt-1">
-            <ActionButton 
-              type="button" 
-              onClick={() => setIsModalOpen(false)} 
-              icon={X} 
-              label="Sair" 
-              variant="outline" 
-              className="flex-1 h-10! text-[11px]" 
-            />
-            <ActionButton 
-              type="submit" 
-              disabled={isSaving} 
-              icon={isSaving ? Loader2 : Save} 
-              label={isSaving ? "Aguarde..." : "Gravar"} 
-              className={`flex-1 h-10! text-[11px] ${isSaving ? "animate-pulse" : "bg-blue-600"}`} 
-            />
+            <ActionButton type="button" onClick={() => setIsModalOpen(false)} icon={X} label="Cancelar" variant="outline" className="flex-1 h-10! text-[11px]" />
+            <ActionButton type="submit" disabled={isSaving} icon={isSaving ? Loader2 : Save} label={isSaving ? "Gravando..." : "Salvar Alterações"} className={`flex-1 h-10! text-[11px] ${isSaving ? "animate-pulse" : "bg-blue-600"}`} />
           </div>
         </form>
+      </Modal>
+
+      {/* MODAL 2: CONFIRMAÇÃO DE EXCLUSÃO */}
+      <Modal 
+        isOpen={isDeleteModalOpen} 
+        onClose={() => setIsDeleteModalOpen(false)} 
+        title="Remover Acesso" 
+        subtitle="Ação Crítica" 
+        icon={Trash2}
+      >
+        <div className="space-y-5 pt-2 text-left">
+          <div className="p-5 bg-red-50 rounded-3xl border border-red-100 flex flex-col items-center text-center">
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-3">
+              <ShieldAlert size={24} className="text-red-500" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-800">Deseja realmente remover este militar?</h3>
+            <p className="text-[11px] text-slate-500 mt-1">
+              O acesso de <span className="font-bold text-red-600">{usuarioParaExcluir?.posto} {usuarioParaExcluir?.name || usuarioParaExcluir?.nome}</span> será permanentemente revogado.
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <ActionButton 
+              type="button" 
+              onClick={() => setIsDeleteModalOpen(false)} 
+              icon={X} 
+              label="Manter Acesso" 
+              variant="outline" 
+              className="flex-1 h-11! text-[11px]" 
+            />
+            <ActionButton 
+              type="button" 
+              onClick={confirmDelete} 
+              disabled={isSaving} 
+              icon={isSaving ? Loader2 : Trash2} 
+              label={isSaving ? "Excluindo..." : "Confirmar Exclusão"} 
+              className={`flex-1 h-11! text-[11px] ${isSaving ? "animate-pulse" : "bg-red-600 hover:bg-red-700"}`} 
+            />
+          </div>
+        </div>
       </Modal>
     </div>
   );
