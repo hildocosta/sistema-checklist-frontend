@@ -10,7 +10,15 @@ const nextConfig: NextConfig = {
     // Ignora erros de tipagem durante o build
     ignoreBuildErrors: true,
   },
-
+  // ADICIONE ESTE BLOCO ABAIXO:
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.vercel-storage.com',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

@@ -32,15 +32,19 @@ export default function PerfilPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // 1. Carregamento inicial com tratamento de erro robusto
+  // 1. Carregamento inicial
   useEffect(() => {
     const carregarDadosIniciais = async () => {
+      console.log("Status da Sessão:", status);
       if (status === "authenticated" && session?.user?.email) {
         try {
+          console.log("Buscando dados do usuário no banco...");
           const response = await fetch("/api/user/update");
           if (!response.ok) throw new Error("Falha ao buscar dados");
           
           const dados = await response.json();
+          console.log("Dados recebidos do Banco:", dados);
+
           setUser({
             nome: dados.name || session.user.name || "",
             email: dados.email || session.user.email || "",
@@ -53,29 +57,31 @@ export default function PerfilPage() {
             image: dados.image || "" 
           });
         } catch (error) {
-          console.error("Erro Perfil:", error);
+          console.error("Erro ao carregar perfil:", error);
         } finally {
           setIsLoading(false);
         }
       } else if (status === "unauthenticated") {
+        console.warn("Usuário não autenticado.");
         setIsLoading(false);
       }
     };
     carregarDadosIniciais();
   }, [session, status]);
 
-  // 2. Handler de Input genérico para evitar repetição de código
+  // 2. Handler de Input
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setUser(prev => ({ ...prev, [name]: value }));
   }, []);
 
-  // 3. Upload de Imagem Otimizado
+  // 3. Upload de Imagem (COM LOGS DETALHADOS)
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validação de tamanho (4MB)
+    console.log("Arquivo selecionado:", file.name, "Tamanho:", file.size);
+
     if (file.size > 4 * 1024 * 1024) {
       alert("A imagem é muito grande (máx 4MB).");
       return;
@@ -83,33 +89,46 @@ export default function PerfilPage() {
 
     setIsUploading(true);
     try {
+      console.log("Iniciando POST para /api/upload...");
       const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
         method: "POST",
         body: file,
       });
 
-      if (!response.ok) throw new Error("Falha no upload");
+      console.log("Resposta do Servidor (Status):", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Erro na resposta da API:", errorText);
+        throw new Error("Falha no upload");
+      }
       
       const newBlob = await response.json();
-      setUser(prev => ({ ...prev, image: newBlob.url }));
+      console.log("Objeto retornado pelo Vercel Blob:", newBlob);
       
-      // Limpa o input para permitir subir a mesma foto caso o usuário a delete
+      if (newBlob.url) {
+        console.log("Sucesso! Nova URL da imagem:", newBlob.url);
+        setUser(prev => ({ ...prev, image: newBlob.url }));
+      } else {
+        console.error("A resposta da API não contém uma URL válida.");
+      }
+      
       e.target.value = ""; 
     } catch (error) {
-      alert("Erro ao processar imagem. Tente novamente.");
+      console.error("Erro completo no processo de upload:", error);
+      alert("Erro ao processar imagem. Verifique o console.");
     } finally {
       setIsUploading(false);
     }
   };
 
-  // 4. Salvamento Seguro (Sanitização de Dados)
+  // 4. Salvamento no Banco
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
+    console.log("Tentando salvar dados no banco:", user);
     
     try {
-      // Destructuring para remover campos que NÃO devem ser enviados ao Prisma/API
-      // 'email' é a chave (where), 'nivelAcesso' é protegido
       const { nivelAcesso, email, ...dadosParaSalvar } = user;
 
       const response = await fetch("/api/user/update", {
@@ -117,18 +136,21 @@ export default function PerfilPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...dadosParaSalvar,
-          nome: user.nome // Mapeando explicitamente se necessário
+          nome: user.nome 
         }),
       });
 
       if (response.ok) {
+        console.log("Dados salvos com sucesso no Banco Neon!");
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
       } else {
         const err = await response.json();
+        console.error("Erro ao salvar no banco:", err);
         throw new Error(err.error || "Erro ao salvar");
       }
     } catch (error) {
+      console.error("Falha no handleSave:", error);
       alert(error.message);
     } finally {
       setIsSaving(false);
@@ -141,14 +163,12 @@ export default function PerfilPage() {
 
   return (
     <div className="animate-in fade-in duration-500 space-y-4 text-left max-w-6xl mx-auto p-2">
-      {/* Notificação de Sucesso */}
       {showSuccess && (
         <div className="fixed top-20 right-8 z-50 animate-in slide-in-from-right-5 flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg font-bold text-xs">
           <CheckCircle2 size={16} /> Perfil atualizado!
         </div>
       )}
 
-      {/* Header */}
       <div className="flex justify-between items-end px-2">
         <div>
           <Breadcrumb itemAtual="Meu Perfil" />
@@ -157,7 +177,6 @@ export default function PerfilPage() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* CARD LATERAL - AVATAR EM DESTAQUE */}
         <aside className="w-full lg:w-80 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col shrink-0">
           <div className="h-24 bg-slate-900 relative">
             <div className="absolute -bottom-14 left-1/2 -translate-x-1/2">
@@ -166,14 +185,28 @@ export default function PerfilPage() {
                   {isUploading ? (
                     <Loader2 className="animate-spin text-blue-500" size={32} />
                   ) : user.image ? (
-                    <img src={user.image} alt="Perfil" className="w-full h-full object-cover" />
+                    <img 
+                      key={user.image} 
+                      src={user.image} 
+                      alt="Perfil" 
+                      className="w-full h-full object-cover"
+                      onLoad={() => console.log("DOM: Imagem carregada com sucesso no elemento <img>")}
+                      onError={(e) => {
+                        console.error("DOM: Erro ao renderizar a imagem. URL pode estar bloqueada ou inválida:", user.image);
+                        e.target.onerror = null; 
+                        // Removi o reset da imagem aqui para você conseguir ver o erro no console sem que ela suma
+                      }}
+                    />
                   ) : (
                     <User size={48} className="text-slate-300" />
                   )}
                 </div>
                 <button 
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => {
+                    console.log("Botão de câmera clicado.");
+                    fileInputRef.current?.click();
+                  }}
                   disabled={isUploading}
                   className="absolute bottom-1 right-1 p-2 rounded-xl bg-blue-600 text-white border-2 border-white shadow-md hover:bg-blue-700 transition-colors disabled:bg-slate-400"
                 >
@@ -184,14 +217,13 @@ export default function PerfilPage() {
             </div>
           </div>
 
+          {/* ... resto do seu código (nome, unidade, etc) permanece igual ... */}
           <div className="pt-16 pb-6 px-4 text-center">
             <h2 className="text-base font-bold text-slate-800 truncate">{user.nome || "Militar"}</h2>
             <p className="text-[10px] font-bold text-blue-600 uppercase mt-0.5">
               {user.posto || "Posto"} • RG {user.re || "---"}
             </p>
-            
             <div className="my-4 border-t border-slate-50"></div>
-
             <div className="space-y-2 text-left">
               <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/50 border border-slate-100">
                 <Building2 size={14} className="text-blue-500 shrink-0" />
@@ -211,7 +243,6 @@ export default function PerfilPage() {
           </div>
         </aside>
 
-        {/* FORMULÁRIO PRINCIPAL */}
         <form onSubmit={handleSave} className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
           <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
             <Award size={16} className="text-blue-600" />
@@ -219,7 +250,7 @@ export default function PerfilPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Nome - Ocupa 2 colunas */}
+            {/* Seus inputs aqui... mantidos exatamente iguais */}
             <div className="md:col-span-2 space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nome Completo</label>
               <div className="relative">
@@ -227,7 +258,6 @@ export default function PerfilPage() {
                 <input name="nome" type="text" value={user.nome} onChange={handleInputChange} className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:border-blue-500 outline-none transition-all font-medium text-slate-700" />
               </div>
             </div>
-
             {/* RE */}
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Registro (RG)</label>
@@ -236,26 +266,22 @@ export default function PerfilPage() {
                 <input name="re" type="text" value={user.re} onChange={handleInputChange} className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:border-blue-500 outline-none transition-all font-medium text-slate-700" />
               </div>
             </div>
-
-            {/* Posto */}
-            <div className="space-y-1">
+             {/* Posto */}
+             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Posto</label>
               <input name="posto" type="text" value={user.posto} onChange={handleInputChange} className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-medium text-slate-700" />
             </div>
 
-            {/* Unidade */}
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Unidade</label>
               <input name="unidade" type="text" value={user.unidade} onChange={handleInputChange} className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-medium text-slate-700" />
             </div>
 
-            {/* Setor */}
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Setor</label>
               <input name="setor" type="text" value={user.setor} onChange={handleInputChange} className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-medium text-slate-700" />
             </div>
 
-            {/* Email - Desabilitado */}
             <div className="md:col-span-2 space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">E-mail Institucional</label>
               <div className="relative">
@@ -264,7 +290,6 @@ export default function PerfilPage() {
               </div>
             </div>
 
-            {/* Telefone */}
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Telefone</label>
               <div className="relative">
@@ -273,7 +298,6 @@ export default function PerfilPage() {
               </div>
             </div>
 
-            {/* Nível Acesso - Informativo */}
             <div className="md:col-span-3 space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nível de Acesso</label>
               <div className="relative">

@@ -23,6 +23,7 @@ export async function GET() {
         unidade: true,
         setor: true,
         telefone: true,
+        image: true, // 1. ADICIONADO: Agora o GET busca a imagem do banco
       },
     });
 
@@ -42,6 +43,7 @@ export async function PUT(req) {
     }
 
     const body = await req.json();
+    console.log("Recebido no PUT da API:", body); // Log para debug
 
     const userAtualizado = await prisma.user.update({
       where: { email: session.user.email },
@@ -52,12 +54,13 @@ export async function PUT(req) {
         setor: body.setor,
         telefone: body.telefone,
         re: body.re,
+        image: body.image, // 2. ADICIONADO: Agora o link da Vercel é salvo no banco!
       },
     });
 
     return NextResponse.json(userAtualizado);
   } catch (error) {
-    console.error(error);
+    console.error("Erro Prisma Update:", error);
     return NextResponse.json({ error: "Erro ao atualizar" }, { status: 500 });
   }
 }
