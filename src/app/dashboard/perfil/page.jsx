@@ -1,90 +1,123 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { 
   User, Mail, Shield, MapPin, Camera, Save, 
   Award, CheckCircle2, Loader2, Building2, Phone, Hash 
 } from "lucide-react";
 
-// Importação dos componentes padronizados
 import Breadcrumb from "../../../components/Breadcrumb";
 import ActionButton from "../../../components/ActionButton";
 import Skeleton from "../../../components/Skeleton";
 
 export default function PerfilPage() {
   const { data: session, status } = useSession(); 
+  const fileInputRef = useRef(null);
   
   const [user, setUser] = useState({
-    nome: "",
-    email: "",
+    nome: "", 
+    email: "", 
     posto: "", 
-    re: "",           
+    re: "", 
     setor: "",
-    unidade: "",
-    telefone: "",
-    nivelAcesso: "Operador (Checklist)"
+    unidade: "", 
+    telefone: "", 
+    nivelAcesso: "Operador", 
+    image: "" 
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // 1. CARREGAR DADOS DO BANCO AO ABRIR A PÁGINA
+  // 1. Carregamento inicial com tratamento de erro robusto
   useEffect(() => {
-    async function carregarDadosIniciais() {
+    const carregarDadosIniciais = async () => {
       if (status === "authenticated" && session?.user?.email) {
         try {
-          
           const response = await fetch("/api/user/update");
-          const dadosDoBanco = await response.json();
-
-          if (response.ok) {
-            setUser({
-              nome: dadosDoBanco.name || session.user.name || "",
-              email: dadosDoBanco.email || session.user.email || "",
-              posto: dadosDoBanco.posto || "",
-              re: dadosDoBanco.re || "",
-              setor: dadosDoBanco.setor || "",
-              unidade: dadosDoBanco.unidade || "17º BPM",
-              telefone: dadosDoBanco.telefone || "",
-              nivelAcesso: ""
-            });
-          }
+          if (!response.ok) throw new Error("Falha ao buscar dados");
+          
+          const dados = await response.json();
+          setUser({
+            nome: dados.name || session.user.name || "",
+            email: dados.email || session.user.email || "",
+            posto: dados.posto || "",
+            re: dados.re || "",
+            setor: dados.setor || "",
+            unidade: dados.unidade || "17º BPM",
+            telefone: dados.telefone || "",
+            nivelAcesso: dados.nivel || "Operador",
+            image: dados.image || "" 
+          });
         } catch (error) {
-          console.error("Erro ao buscar dados do perfil:", error);
+          console.error("Erro Perfil:", error);
         } finally {
           setIsLoading(false);
         }
       } else if (status === "unauthenticated") {
         setIsLoading(false);
       }
-    }
-
+    };
     carregarDadosIniciais();
   }, [session, status]);
 
-  const handleChange = (e) => {
+  // 2. Handler de Input genérico para evitar repetição de código
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setUser(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  // 3. Upload de Imagem Otimizado
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validação de tamanho (4MB)
+    if (file.size > 4 * 1024 * 1024) {
+      alert("A imagem é muito grande (máx 4MB).");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+        method: "POST",
+        body: file,
+      });
+
+      if (!response.ok) throw new Error("Falha no upload");
+      
+      const newBlob = await response.json();
+      setUser(prev => ({ ...prev, image: newBlob.url }));
+      
+      // Limpa o input para permitir subir a mesma foto caso o usuário a delete
+      e.target.value = ""; 
+    } catch (error) {
+      alert("Erro ao processar imagem. Tente novamente.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  // 2. SALVAR DADOS NO BANCO NEON/VERCEL
+  // 4. Salvamento Seguro (Sanitização de Dados)
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     
     try {
+      // Destructuring para remover campos que NÃO devem ser enviados ao Prisma/API
+      // 'email' é a chave (where), 'nivelAcesso' é protegido
+      const { nivelAcesso, email, ...dadosParaSalvar } = user;
+
       const response = await fetch("/api/user/update", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nome: user.nome,
-          posto: user.posto,
-          unidade: user.unidade,
-          setor: user.setor,
-          telefone: user.telefone,
-          re: user.re
+          ...dadosParaSalvar,
+          nome: user.nome // Mapeando explicitamente se necessário
         }),
       });
 
@@ -92,221 +125,174 @@ export default function PerfilPage() {
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
       } else {
-        const errorData = await response.json();
-        alert("Erro ao salvar: " + (errorData.error || "Erro desconhecido"));
+        const err = await response.json();
+        throw new Error(err.error || "Erro ao salvar");
       }
     } catch (error) {
-      alert("Erro de conexão com o servidor.");
+      alert(error.message);
     } finally {
       setIsSaving(false);
     }
   };
 
+  if (isLoading) {
+    return <div className="p-8 max-w-6xl mx-auto"><Skeleton className="w-full h-96 rounded-3xl" /></div>;
+  }
+
   return (
-    <div className="animate-in fade-in duration-700 space-y-6 relative text-left">
-      
+    <div className="animate-in fade-in duration-500 space-y-4 text-left max-w-6xl mx-auto p-2">
+      {/* Notificação de Sucesso */}
       {showSuccess && (
-        <div className="fixed top-24 right-8 z-60 animate-in slide-in-from-right-10 flex items-center gap-3 bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl shadow-emerald-500/20 font-bold text-sm">
-          <CheckCircle2 size={20} /> Perfil atualizado com sucesso!
+        <div className="fixed top-20 right-8 z-50 animate-in slide-in-from-right-5 flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg font-bold text-xs">
+          <CheckCircle2 size={16} /> Perfil atualizado!
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* Header */}
+      <div className="flex justify-between items-end px-2">
         <div>
           <Breadcrumb itemAtual="Meu Perfil" />
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Configurações de Conta</h1>
+          <h1 className="text-lg font-bold text-slate-800 tracking-tight">Configurações</h1>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        
-        {/* --- CARD LATERAL (RESUMO) --- */}
-        {isLoading ? (
-          <Skeleton className="w-full lg:w-1/3 h-105 rounded-3xl" />
-        ) : (
-          <div className="w-full lg:w-1/3 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col min-h-105">
-            <div className="h-32 bg-gradient-to-br from-slate-800 to-slate-900 relative">
-              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
-                <div className="relative group">
-                  <div className="w-28 h-28 rounded-2xl border-4 border-white bg-slate-50 overflow-hidden shadow-xl flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* CARD LATERAL - AVATAR EM DESTAQUE */}
+        <aside className="w-full lg:w-80 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col shrink-0">
+          <div className="h-24 bg-slate-900 relative">
+            <div className="absolute -bottom-14 left-1/2 -translate-x-1/2">
+              <div className="relative group">
+                <div className="w-28 h-28 rounded-2xl border-4 border-white bg-slate-50 overflow-hidden shadow-lg flex items-center justify-center">
+                  {isUploading ? (
+                    <Loader2 className="animate-spin text-blue-500" size={32} />
+                  ) : user.image ? (
+                    <img src={user.image} alt="Perfil" className="w-full h-full object-cover" />
+                  ) : (
                     <User size={48} className="text-slate-300" />
-                  </div>
-                  <button type="button" className="absolute -bottom-2 -right-2 p-2 bg-blue-600 text-white rounded-lg shadow-lg border-2 border-white hover:bg-blue-700 transition-colors">
-                    <Camera size={16} />
-                  </button>
+                  )}
                 </div>
+                <button 
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="absolute bottom-1 right-1 p-2 rounded-xl bg-blue-600 text-white border-2 border-white shadow-md hover:bg-blue-700 transition-colors disabled:bg-slate-400"
+                >
+                  <Camera size={14} />
+                </button>
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
               </div>
             </div>
+          </div>
 
-            <div className="pt-16 pb-10 px-6 text-center flex flex-col items-center">
-              <h2 className="text-xl font-bold text-slate-800 tracking-tight">
-                {user.nome || "Militar"}
-              </h2>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">{user.posto}</span>
-                <span className="text-slate-300">•</span>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">RG {user.re || "---.---"}</span>
-              </div>
-              
-              <div className="w-full h-px bg-slate-100 my-8"></div>
+          <div className="pt-16 pb-6 px-4 text-center">
+            <h2 className="text-base font-bold text-slate-800 truncate">{user.nome || "Militar"}</h2>
+            <p className="text-[10px] font-bold text-blue-600 uppercase mt-0.5">
+              {user.posto || "Posto"} • RG {user.re || "---"}
+            </p>
+            
+            <div className="my-4 border-t border-slate-50"></div>
 
-              <div className="w-full space-y-3">
-                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-left transition-colors hover:bg-slate-100/50">
-                  <Building2 size={18} className="text-blue-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Unidade</p>
-                    <p className="text-xs font-bold text-slate-600 leading-tight">{user.unidade}</p>
-                  </div>
+            <div className="space-y-2 text-left">
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/50 border border-slate-100">
+                <Building2 size={14} className="text-blue-500 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black text-slate-400 uppercase leading-none">Unidade</p>
+                  <p className="text-[11px] font-bold text-slate-600 truncate">{user.unidade}</p>
                 </div>
-
-                <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-left transition-colors hover:bg-slate-100/50">
-                  <MapPin size={18} className="text-blue-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Setor / Seção</p>
-                    <p className="text-xs font-bold text-slate-600 leading-tight">{user.setor}</p>
-                  </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/50 border border-slate-100">
+                <MapPin size={14} className="text-blue-500 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black text-slate-400 uppercase leading-none">Setor</p>
+                  <p className="text-[11px] font-bold text-slate-600 truncate">{user.setor || "Não informado"}</p>
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </aside>
 
-        {/* --- FORMULÁRIO --- */}
-        <div className="w-full lg:w-2/3 flex flex-col gap-6">
-          {isLoading ? (
-            <Skeleton className="h-105 w-full rounded-3xl" />
-          ) : (
-            <form onSubmit={handleSave} className="bg-white rounded-3xl shadow-sm border border-slate-100 p-10 grow">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-8 flex items-center gap-2">
-                <Award size={18} className="text-blue-600" /> Dados Cadastrais
-              </h3>
+        {/* FORMULÁRIO PRINCIPAL */}
+        <form onSubmit={handleSave} className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
+            <Award size={16} className="text-blue-600" />
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Dados Cadastrais</h3>
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 items-end">
-                
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Nome Completo</label>
-                  <div className="relative">
-                    <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      name="nome" 
-                      type="text" 
-                      value={user.nome} 
-                      onChange={handleChange} 
-                      className="w-full h-13.5 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Posto / Graduação</label>
-                  <div className="relative">
-                    <Award size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      name="posto" 
-                      type="text" 
-                      value={user.posto} 
-                      onChange={handleChange} 
-                      className="w-full h-13.5 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Registro (RG)</label>
-                  <div className="relative">
-                    <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      name="re"
-                      type="text" 
-                      value={user.re} 
-                      onChange={handleChange}
-                      placeholder="000.000-0"
-                      className="w-full h-13.5 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Lotação (Unidade)</label>
-                  <div className="relative">
-                    <Building2 size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      name="unidade" 
-                      type="text" 
-                      value={user.unidade} 
-                      onChange={handleChange} 
-                      className="w-full h-13.5 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Setor / Seção</label>
-                  <div className="relative">
-                    <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      name="setor" 
-                      type="text" 
-                      value={user.setor} 
-                      onChange={handleChange} 
-                      className="w-full h-13.5 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">E-mail Institucional</label>
-                  <div className="relative">
-                    <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      name="email" 
-                      type="email" 
-                      value={user.email} 
-                      disabled
-                      className="w-full h-13.5 pl-12 pr-4 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-400 cursor-not-allowed font-medium"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Telefone de Contato</label>
-                  <div className="relative">
-                    <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      name="telefone" 
-                      type="text" 
-                      value={user.telefone} 
-                      onChange={handleChange} 
-                      placeholder="(00) 00000-0000"
-                      className="w-full h-13.5 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1 block">Nível de Permissão</label>
-                  <div className="relative">
-                    <Shield size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                      disabled 
-                      value={user.nivelAcesso} 
-                      className="w-full h-13.5 pl-12 pr-4 bg-slate-100 border border-slate-200 rounded-xl text-sm text-blue-600 font-bold cursor-not-allowed"
-                    />
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Nome - Ocupa 2 colunas */}
+            <div className="md:col-span-2 space-y-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nome Completo</label>
+              <div className="relative">
+                <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input name="nome" type="text" value={user.nome} onChange={handleInputChange} className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:border-blue-500 outline-none transition-all font-medium text-slate-700" />
               </div>
+            </div>
 
-              <div className="mt-10 flex justify-end">
-                <ActionButton 
-                  type="submit"
-                  disabled={isSaving}
-                  icon={isSaving ? Loader2 : Save}
-                  label={isSaving ? "Salvando..." : "Atualizar Perfil"}
-                />
+            {/* RE */}
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Registro (RG)</label>
+              <div className="relative">
+                <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input name="re" type="text" value={user.re} onChange={handleInputChange} className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:border-blue-500 outline-none transition-all font-medium text-slate-700" />
               </div>
-            </form>
-          )}
-        </div>
+            </div>
+
+            {/* Posto */}
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Posto</label>
+              <input name="posto" type="text" value={user.posto} onChange={handleInputChange} className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-medium text-slate-700" />
+            </div>
+
+            {/* Unidade */}
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Unidade</label>
+              <input name="unidade" type="text" value={user.unidade} onChange={handleInputChange} className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-medium text-slate-700" />
+            </div>
+
+            {/* Setor */}
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Setor</label>
+              <input name="setor" type="text" value={user.setor} onChange={handleInputChange} className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-medium text-slate-700" />
+            </div>
+
+            {/* Email - Desabilitado */}
+            <div className="md:col-span-2 space-y-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">E-mail Institucional</label>
+              <div className="relative">
+                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                <input value={user.email} disabled className="w-full h-10 pl-9 pr-3 bg-slate-100 border border-slate-200 rounded-lg text-xs text-slate-400 cursor-not-allowed font-medium" />
+              </div>
+            </div>
+
+            {/* Telefone */}
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Telefone</label>
+              <div className="relative">
+                <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input name="telefone" type="text" value={user.telefone} onChange={handleInputChange} placeholder="(00) 00000-0000" className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-medium text-slate-700" />
+              </div>
+            </div>
+
+            {/* Nível Acesso - Informativo */}
+            <div className="md:col-span-3 space-y-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nível de Acesso</label>
+              <div className="relative">
+                <Shield size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400" />
+                <input disabled value={user.nivelAcesso} className="w-full h-10 pl-9 pr-3 bg-blue-50/50 border border-blue-100 rounded-lg text-xs text-blue-600 font-bold cursor-not-allowed" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex justify-end">
+            <ActionButton 
+              type="submit"
+              disabled={isSaving || isUploading}
+              icon={isSaving ? Loader2 : Save}
+              label={isSaving ? "Salvando..." : "Salvar Alterações"}
+              className="px-8 py-2.5 text-xs h-auto shadow-md"
+            />
+          </div>
+        </form>
       </div>
     </div>
   );
