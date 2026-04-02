@@ -23,7 +23,7 @@ model User {
   setor     String?
   telefone  String?
   
-  // Campo para Foto (ESSENCIAL PARA O VERCEL BLOB)
+  // Campo para Foto 
   image     String?  
 
   // Controle de Acesso

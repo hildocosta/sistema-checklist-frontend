@@ -24,11 +24,9 @@ export default function UsuariosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Modais
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
-  // Seleção
   const [editandoId, setEditandoId] = useState(null);
   const [usuarioParaExcluir, setUsuarioParaExcluir] = useState(null);
   const [dadosMilitar, setDadosMilitar] = useState({
@@ -51,7 +49,6 @@ export default function UsuariosPage() {
     carregarUsuarios();
   }, []);
 
-  // --- Lógica de Edição ---
   const handleEditClick = (u) => {
     setEditandoId(u.id);
     setDadosMilitar({
@@ -87,7 +84,6 @@ export default function UsuariosPage() {
     }
   };
 
-  // --- Lógica de Exclusão ---
   const handleOpenDeleteModal = (u) => {
     setUsuarioParaExcluir(u);
     setIsDeleteModalOpen(true);
@@ -128,7 +124,6 @@ export default function UsuariosPage() {
         </div>
       </div>
 
-      {/* Cards de Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {isLoading ? (
           <><Skeleton className="h-32 rounded-3xl" /><Skeleton className="h-32 rounded-3xl" /><Skeleton className="h-32 rounded-3xl" /></>
@@ -141,7 +136,6 @@ export default function UsuariosPage() {
         )}
       </div>
 
-      {/* Tabela de Dados */}
       {isLoading ? (
         <div className="bg-white rounded-3xl border border-slate-100 p-8 space-y-4">
           <Skeleton className="h-10 w-64 rounded-xl" />
@@ -164,18 +158,28 @@ export default function UsuariosPage() {
             <tr key={u.id} className="hover:bg-slate-50/50 transition group border-b border-slate-50 last:border-0">
               <td className="px-8 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 uppercase border border-slate-200">
-                    {(u.name || u.nome || "M").charAt(0)}
+                  <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shrink-0">
+                    {u.image ? (
+                      <img 
+                        src={u.image} 
+                        alt={u.name || u.nome || "Militar"} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">
+                        {(u.name || u.nome || "M").charAt(0)}
+                      </span>
+                    )}
                   </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-bold text-slate-700 leading-tight">{u.posto} {u.name || u.nome}</span>
+                  <div className="flex flex-col text-left overflow-hidden">
+                    <span className="text-sm font-bold text-slate-700 leading-tight truncate">{u.posto} {u.name || u.nome}</span>
                     <span className="text-[12px] text-blue-600 font-mono font-bold tracking-tight">RE {u.re || '---'}</span>
                   </div>
                 </div>
               </td>
               <td className="px-8 py-4">
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium text-left">
-                  <Mail size={12} className="text-slate-300" /> {u.email}
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium text-left truncate">
+                  <Mail size={12} className="text-slate-300 shrink-0" /> <span className="truncate">{u.email}</span>
                 </div>
               </td>
               <td className="px-8 py-4 text-center"><PermissionBadge level={u.nivel || 'Operador'} /></td>
@@ -213,9 +217,7 @@ export default function UsuariosPage() {
           
           <FormInput label="Nome Completo" required value={dadosMilitar.nome} onChange={(e) => setDadosMilitar({...dadosMilitar, nome: e.target.value})} />
           
-          <div className="relative">
-             <FormInput label="E-mail Institucional" disabled value={dadosMilitar.email} className="bg-slate-50/50 opacity-60 text-[11px]" />
-          </div>
+          <FormInput label="E-mail Institucional" disabled value={dadosMilitar.email} className="bg-slate-50/50 opacity-60 text-[11px]" />
           
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="p-2.5 bg-blue-50/30 rounded-xl border border-blue-100/50 space-y-2">

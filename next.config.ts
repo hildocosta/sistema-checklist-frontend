@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  /* outras opções de configuração aqui */
+  
 };
 
 export default nextConfig;
