@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   ShieldCheck, ShieldAlert, Edit3,
-  Mail, Shield, Loader2, Save, X, User, Trash2 
+  Mail, Shield, Loader2, Save, X, User, Trash2, Filter 
 } from "lucide-react";
 
 import Breadcrumb from "../../../components/Breadcrumb";
@@ -21,6 +21,7 @@ import Skeleton from "../../../components/Skeleton";
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState([]);
   const [busca, setBusca] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState("todos");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -112,8 +113,28 @@ export default function UsuariosPage() {
     const nomeBase = (u.name || u.nome || "").toLowerCase();
     const reBase = (u.re || "").toLowerCase();
     const termo = busca.toLowerCase();
-    return nomeBase.includes(termo) || reBase.includes(termo);
+    
+    const matchesBusca = nomeBase.includes(termo) || reBase.includes(termo);
+    
+    let matchesCategoria = true;
+    if (filtroCategoria === 'Admin') matchesCategoria = u.nivel === 'Admin';
+    else if (filtroCategoria === 'Ativo') matchesCategoria = u.status === 'Ativo';
+    else if (filtroCategoria === 'Inativo') matchesCategoria = u.status === 'Inativo';
+
+    return matchesBusca && matchesCategoria;
   });
+
+  // Mapeamento de cores para o Toolbar refletir os StatCards
+  const getFilterStyles = (cat) => {
+    if (filtroCategoria !== cat) return "bg-slate-50 text-slate-400 hover:bg-slate-100";
+    
+    switch(cat) {
+      case 'Admin': return "bg-blue-600 text-white shadow-md shadow-blue-200";
+      case 'Ativo': return "bg-emerald-500 text-white shadow-md shadow-emerald-200";
+      case 'Inativo': return "bg-red-500 text-white shadow-md shadow-red-200";
+      default: return "bg-slate-800 text-white shadow-md shadow-slate-200";
+    }
+  };
 
   return (
     <div className="animate-in fade-in duration-700 space-y-6">
@@ -134,6 +155,26 @@ export default function UsuariosPage() {
             <StatCard label="Acessos Bloqueados" value={usuarios.filter(u => u.status === 'Inativo').length.toString().padStart(2, '0')} icon={ShieldAlert} color="red" />
           </>
         )}
+      </div>
+
+      {/* TOOLBAR COM CORES DINÂMICAS QUE REFLETEM OS CARDS */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className="bg-slate-100 p-2 rounded-lg text-slate-500">
+            <Filter size={14} />
+          </div>
+          <div className="flex gap-1">
+            {['todos', 'Admin', 'Ativo', 'Inativo'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFiltroCategoria(cat)}
+                className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${getFilterStyles(cat)}`}
+              >
+                {cat === 'todos' ? 'Ver Todos' : cat === 'Inativo' ? 'Bloqueados' : cat}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {isLoading ? (
@@ -160,15 +201,9 @@ export default function UsuariosPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shrink-0">
                     {u.image ? (
-                      <img 
-                        src={u.image} 
-                        alt={u.name || u.nome || "Militar"} 
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={u.image} alt="Militar" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">
-                        {(u.name || u.nome || "M").charAt(0)}
-                      </span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">{(u.name || u.nome || "M").charAt(0)}</span>
                     )}
                   </div>
                   <div className="flex flex-col text-left overflow-hidden">
@@ -214,47 +249,34 @@ export default function UsuariosPage() {
             />
             <FormInput label="RG" required value={dadosMilitar.re} onChange={(e) => setDadosMilitar({...dadosMilitar, re: e.target.value})} />
           </div>
-          
           <FormInput label="Nome Completo" required value={dadosMilitar.nome} onChange={(e) => setDadosMilitar({...dadosMilitar, nome: e.target.value})} />
-          
           <FormInput label="E-mail Institucional" disabled value={dadosMilitar.email} className="bg-slate-50/50 opacity-60 text-[11px]" />
           
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="p-2.5 bg-blue-50/30 rounded-xl border border-blue-100/50 space-y-2">
-              <p className="text-[9px] font-black text-blue-900/50 uppercase tracking-widest flex items-center gap-1">
-                <Shield size={10} /> Nível de Permissão
-              </p>
+              <p className="text-[9px] font-black text-blue-900/50 uppercase tracking-widest flex items-center gap-1"><Shield size={10} /> Nível</p>
               <div className="flex gap-1">
                 {['Admin', 'Gestor', 'Operador'].map((level) => (
                   <button 
                     key={level} 
                     type="button" 
                     onClick={() => setDadosMilitar({...dadosMilitar, nivel: level})}
-                    className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
-                      dadosMilitar.nivel === level ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-400 border border-slate-200'
-                    }`}
+                    className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${dadosMilitar.nivel === level ? 'bg-blue-600 text-white' : 'bg-white text-slate-400 border border-slate-200'}`}
                   >
                     {level}
                   </button>
                 ))}
               </div>
             </div>
-
             <div className="p-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 space-y-2">
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                <ShieldAlert size={10} /> Status do Acesso
-              </p>
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1"><ShieldAlert size={10} /> Status</p>
               <div className="flex gap-1">
                 {['Ativo', 'Inativo'].map((status) => (
                   <button 
                     key={status} 
                     type="button" 
                     onClick={() => setDadosMilitar({...dadosMilitar, status: status})}
-                    className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
-                        dadosMilitar.status === status 
-                        ? (status === 'Ativo' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') 
-                        : 'bg-white text-slate-400 border border-slate-200'
-                    }`}
+                    className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${dadosMilitar.status === status ? (status === 'Ativo' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white') : 'bg-white text-slate-400 border border-slate-200'}`}
                   >
                     {status === 'Ativo' ? 'Ativo' : 'Bloqueado'}
                   </button>
@@ -288,24 +310,9 @@ export default function UsuariosPage() {
               O acesso de <span className="font-bold text-red-600">{usuarioParaExcluir?.posto} {usuarioParaExcluir?.name || usuarioParaExcluir?.nome}</span> será permanentemente revogado.
             </p>
           </div>
-
           <div className="flex gap-3">
-            <ActionButton 
-              type="button" 
-              onClick={() => setIsDeleteModalOpen(false)} 
-              icon={X} 
-              label="Manter Acesso" 
-              variant="outline" 
-              className="flex-1 h-11! text-[11px]" 
-            />
-            <ActionButton 
-              type="button" 
-              onClick={confirmDelete} 
-              disabled={isSaving} 
-              icon={isSaving ? Loader2 : Trash2} 
-              label={isSaving ? "Excluindo..." : "Confirmar Exclusão"} 
-              className={`flex-1 h-11! text-[11px] ${isSaving ? "animate-pulse" : "bg-red-600 hover:bg-red-700"}`} 
-            />
+            <ActionButton type="button" onClick={() => setIsDeleteModalOpen(false)} icon={X} label="Manter Acesso" variant="outline" className="flex-1 h-11! text-[11px]" />
+            <ActionButton type="button" onClick={confirmDelete} disabled={isSaving} icon={isSaving ? Loader2 : Trash2} label={isSaving ? "Excluindo..." : "Confirmar Exclusão"} className={`flex-1 h-11! text-[11px] ${isSaving ? "animate-pulse" : "bg-red-600 hover:bg-red-700"}`} />
           </div>
         </div>
       </Modal>
