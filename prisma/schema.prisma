@@ -3,7 +3,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// 2. Configuração da Conexão (ESTE É O BLOCO QUE O ERRO DIZ QUE FALTA)
+// 2. Configuração da Conexão
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -16,16 +16,19 @@ model User {
   email     String   @unique
   password  String
   
-  posto     String?   @default("Soldado")
-  re        String?   @unique
-  
-  // Novos campos que incluímos
-  nivel     String?   @default("Operador")
-  status    String?   @default("Ativo")
-
-  unidade   String?   @default("17º BPM")
+  // Campos Militares
+  posto     String?  @default("Soldado")
+  re        String?  @unique
+  unidade   String?  @default("17º BPM")
   setor     String?
   telefone  String?
+  
+  // Campo para Foto (ESSENCIAL PARA O VERCEL BLOB)
+  image     String?  
+
+  // Controle de Acesso
+  nivel     String?  @default("Operador")
+  status    String?  @default("Ativo")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
