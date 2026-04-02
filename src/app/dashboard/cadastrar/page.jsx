@@ -6,7 +6,6 @@ import {
   Layers, Archive, Mail, Phone, Building2, User, Save, Loader2, KeyRound, AlertCircle
 } from "lucide-react";
 
-// Mantendo suas importações originais que você confirmou estarem funcionais
 import Breadcrumb from "../../../components/Breadcrumb";
 import ActionButton from "../../../components/ActionButton";
 import Skeleton from "../../../components/Skeleton";
@@ -17,7 +16,6 @@ export default function CadastrarPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [feedback, setFeedback] = useState({ tipo: "", msg: "" });
 
-  // Efeito de Skeleton simulando carregamento inicial
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
@@ -28,13 +26,11 @@ export default function CadastrarPage() {
     setIsSaving(true);
     setFeedback({ tipo: "", msg: "" });
 
-    // Captura automática de todos os inputs do formulário
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
 
     try {
       const endpoint = abaAtiva === "militar" ? "/api/militares" : "/api/itens";
-      
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -42,17 +38,14 @@ export default function CadastrarPage() {
       });
 
       const result = await response.json();
-
       if (!response.ok) throw new Error(result.error || "Erro ao processar cadastro");
 
       setFeedback({ tipo: "sucesso", msg: "Cadastro realizado com sucesso!" });
-      e.target.reset(); // Limpa o formulário após sucesso
-
+      e.target.reset();
     } catch (error) {
       setFeedback({ tipo: "erro", msg: error.message });
     } finally {
       setIsSaving(false);
-      // Remove o alerta após 4 segundos
       setTimeout(() => setFeedback({ tipo: "", msg: "" }), 4000);
     }
   };
@@ -60,7 +53,6 @@ export default function CadastrarPage() {
   return (
     <div className="animate-in fade-in duration-500 space-y-4 text-left max-w-6xl mx-auto p-2">
       
-      {/* TOAST DE FEEDBACK (FIXO) */}
       {feedback.msg && (
         <div className={`fixed top-20 right-8 z-50 flex items-center gap-2 px-4 py-2 rounded-xl shadow-lg font-bold text-xs animate-in slide-in-from-right-5 ${
           feedback.tipo === "sucesso" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
@@ -70,7 +62,6 @@ export default function CadastrarPage() {
         </div>
       )}
 
-      {/* --- CABEÇALHO --- */}
       <div className="flex flex-col md:flex-row justify-between items-end px-2 gap-4">
         <div>
           <Breadcrumb itemAtual="Novo Cadastro" />
@@ -99,9 +90,9 @@ export default function CadastrarPage() {
         </div>
       </div>
 
-      {/* --- FORMULÁRIO PRINCIPAL --- */}
+      {/* AJUSTE: p-5 em vez de p-6 para reduzir o tamanho total do card */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="p-5">
           {isLoading ? (
             <div className="space-y-6">
                <Skeleton className="h-8 w-48 rounded-lg" />
@@ -114,7 +105,8 @@ export default function CadastrarPage() {
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
               
-              <div className="flex items-center gap-2 mb-6 border-b border-slate-50 pb-4">
+              {/* AJUSTE: mb-4 e pb-3 para encurtar o cabeçalho interno */}
+              <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
                 {abaAtiva === "militar" ? (
                   <>
                     <Shield size={16} className="text-blue-600" />
@@ -128,9 +120,9 @@ export default function CadastrarPage() {
                 )}
               </div>
 
+              {/* AJUSTE: gap-3 em vez de gap-4 para aproximar os campos */}
               {abaAtiva === "militar" ? (
-                /* GRID MILITAR */
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nome Completo</label>
                     <div className="relative">
@@ -158,7 +150,6 @@ export default function CadastrarPage() {
                       <option>Subtenente QP PM</option>
                       <option>Asp. Of. PM</option>
                       <option>2º Ten. QOEM PM</option>
-                      <option>1º Ten. QOEM PM</option>
                       <option>Cap. QOEM PM</option>
                       <option>Major QOEM PM</option>
                       <option>Ten.-Cel. QOEM PM</option>
@@ -208,8 +199,7 @@ export default function CadastrarPage() {
                   </div>
                 </div>
               ) : (
-                /* GRID ITEM / CARGA - AJUSTADO */
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Categoria</label>
                     <div className="relative">
@@ -242,7 +232,7 @@ export default function CadastrarPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nº de Série (Opcional)</label>
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nº de Série</label>
                     <input name="serie" type="text" placeholder="Ex: AA094019B" className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-mono font-bold text-slate-600 uppercase" />
                   </div>
 
@@ -255,8 +245,8 @@ export default function CadastrarPage() {
             </div>
           )}
 
-          {/* BOTÃO DE AÇÃO */}
-          <div className="mt-8 pt-6 border-t border-slate-50 flex justify-end">
+          {/* AJUSTE: mt-6 e pt-4 para reduzir o espaço inferior final */}
+          <div className="mt-6 pt-4 border-t border-slate-50 flex justify-end">
             {!isLoading && (
               <ActionButton 
                 type="submit"
