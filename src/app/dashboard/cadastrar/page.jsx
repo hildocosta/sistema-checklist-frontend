@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { 
   UserPlus, Shield, CheckCircle2, PackagePlus, Hash, FileText, 
-  Layers, Archive, Mail, Phone, MapPin, Building2, User, Save, Loader2, KeyRound, AlertCircle
+  Layers, Archive, Mail, Phone, Building2, User, Save, Loader2, KeyRound, AlertCircle
 } from "lucide-react";
+
+// Mantendo suas importações originais que você confirmou estarem funcionais
 import Breadcrumb from "../../../components/Breadcrumb";
 import ActionButton from "../../../components/ActionButton";
 import Skeleton from "../../../components/Skeleton";
@@ -127,9 +129,8 @@ export default function CadastrarPage() {
               </div>
 
               {abaAtiva === "militar" ? (
-                /* GRID MILITAR (MODEL USER) */
+                /* GRID MILITAR */
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nome Completo</label>
                     <div className="relative">
@@ -159,9 +160,9 @@ export default function CadastrarPage() {
                       <option>2º Ten. QOEM PM</option>
                       <option>1º Ten. QOEM PM</option>
                       <option>Cap. QOEM PM</option>
-                       <option>Majpr QOEM PM</option>
-                        <option>Ten.-Cel. QOEM PM</option>
-                         <option>Cel. QOEM PM</option>
+                      <option>Major QOEM PM</option>
+                      <option>Ten.-Cel. QOEM PM</option>
+                      <option>Cel. QOEM PM</option>
                     </select>
                   </div>
 
@@ -207,12 +208,13 @@ export default function CadastrarPage() {
                   </div>
                 </div>
               ) : (
+                /* GRID ITEM / CARGA - AJUSTADO */
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Categoria</label>
                     <div className="relative">
                       <Layers size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <select required className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-bold text-slate-600 cursor-pointer appearance-none">
+                      <select name="categoria" required className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-bold text-slate-600 cursor-pointer appearance-none">
                         <option value="armamento">Armamento</option>
                         <option value="veiculo">Viatura</option>
                         <option value="sade">SADE</option>
@@ -227,7 +229,7 @@ export default function CadastrarPage() {
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Descrição do Equipamento</label>
                     <div className="relative">
                       <FileText size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input required type="text" placeholder="Ex: Pistola BERETTA APX 9mm" className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-medium text-slate-700" />
+                      <input required name="descricao" type="text" placeholder="Ex: Pistola BERETTA APX 9mm" className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-medium text-slate-700" />
                     </div>
                   </div>
 
@@ -235,18 +237,18 @@ export default function CadastrarPage() {
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nº PMPR</label>
                     <div className="relative">
                       <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input type="text" placeholder="P44XXX" className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-mono font-bold text-blue-600 uppercase" />
+                      <input name="pmpr" type="text" placeholder="P44XXX" className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-mono font-bold text-blue-600 uppercase" />
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nº de Série</label>
-                    <input required type="text" placeholder="Ex: AA094019B" className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-mono font-bold text-slate-600 uppercase" />
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Nº de Série (Opcional)</label>
+                    <input name="serie" type="text" placeholder="Ex: AA094019B" className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-mono font-bold text-slate-600 uppercase" />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Quantidade</label>
-                    <input required type="number" min="1" defaultValue="1" className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-black text-slate-700" />
+                    <input required name="quantidade" type="number" min="1" defaultValue="1" className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 font-black text-slate-700" />
                   </div>
                 </div>
               )}
