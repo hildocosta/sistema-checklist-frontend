@@ -5,8 +5,8 @@ import {
   ClipboardCheck, Printer, Save, 
   Search, BookOpen, AlertTriangle,
   RotateCcw, CheckCircle2, ShieldCheck,
-  Zap, Package, Radio, CarFront,
-  Activity, Flashlight, Layers,
+  Zap, Package, Radio, CarFront, Box,PlugZap,
+  Activity, Flashlight, Layers, Smartphone,
   ChevronUp 
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -22,6 +22,7 @@ import { INVENTARIO_COMPLETO, EFETIVO_17BPM } from "../../../data/inventario/ind
 // Componentes de interface
 import Breadcrumb from "../../../components/Breadcrumb";
 import ActionButton from "../../../components/ActionButton";
+import SecondaryButton from "../../../components/SecondaryButton";
 import Skeleton from "../../../components/Skeleton";
 
 export default function ChecklistPage() {
@@ -61,13 +62,13 @@ export default function ChecklistPage() {
 
   const categorias = [
     { id: "armamento", label: "Armas", icon: ShieldCheck },
-    { id: "municao", label: "Munições", icon: Zap },
-    { id: "taser", label: "Taser", icon: Flashlight },
+    { id: "municao", label: "Munições", icon: Layers },
+    { id: "taser", label: "Taser", icon: Zap },
     { id: "equipamento", label: "Equip", icon: Package },
     { id: "comunicacao", label: "Rádios", icon: Radio },
     { id: "veiculo", label: "Viaturas", icon: CarFront },
-    { id: "sade", label: "Sade", icon: Activity },
-    { id: "acessoriosade", label: "Aces SADE", icon: Layers },
+    { id: "sade", label: "Sade", icon: Smartphone },
+    { id: "acessoriosade", label: "Aces SADE", icon: PlugZap  },
   ];
 
   const getPendencias = (catId) => items.filter(i => i.cat === catId && i.status !== "ok").length;
@@ -266,7 +267,7 @@ export default function ChecklistPage() {
         </div>
         <div className="flex gap-2">
           <ActionButton icon={RotateCcw} label="Resetar" onClick={handleReset} variant="outline" />
-          <ActionButton icon={Printer} label="Gerar & Enviar" onClick={gerarPDF} disabled={!isConferenciaCompleta} />
+          <SecondaryButton icon={Printer} label="Gerar & Enviar" onClick={gerarPDF} disabled={!isConferenciaCompleta} />
         </div>
       </div>
 

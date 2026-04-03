@@ -67,7 +67,7 @@ export default function RelatoriosPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         <div>
           <Breadcrumb itemAtual="Arquivo de Relatórios" />
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Histórico de Conferência</h1>
+          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Histórico de Conferência</h1>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">
             Repositório de Documentos Oficiais - 17º BPM
           </p>

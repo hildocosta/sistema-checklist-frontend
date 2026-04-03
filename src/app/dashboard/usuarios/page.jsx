@@ -208,7 +208,7 @@ export default function UsuariosPage() {
                   </div>
                   <div className="flex flex-col text-left overflow-hidden">
                     <span className="text-sm font-bold text-slate-700 leading-tight truncate">{u.posto} {u.name || u.nome}</span>
-                    <span className="text-[12px] text-blue-600 font-mono font-bold tracking-tight">RE {u.re || '---'}</span>
+                    <span className="text-[12px] text-blue-600 font-mono font-bold tracking-tight">RG {u.re || '---'}</span>
                   </div>
                 </div>
               </td>
