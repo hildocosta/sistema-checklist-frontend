@@ -5,7 +5,7 @@ import {
   ClipboardCheck, Printer, Save, 
   Search, BookOpen, AlertTriangle,
   RotateCcw, CheckCircle2, ShieldCheck,
-  Zap, Package, Radio, CarFront, Box,PlugZap,
+  Zap, Package, Radio, CarFront, Box, PlugZap,
   Activity, Flashlight, Layers, Smartphone,
   ChevronUp 
 } from "lucide-react";
@@ -14,7 +14,6 @@ import { useSession } from "next-auth/react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode"; 
-
 
 // --- IMPORTAÇÃO DOS DADOS ---
 import { INVENTARIO_COMPLETO, EFETIVO_17BPM } from "../../../data/inventario/index";
@@ -93,7 +92,6 @@ export default function ChecklistPage() {
     toast.info("Checklist resetado com sucesso.");
   };
 
-  // --- FUNÇÃO PARA GERAR HASH DE AUTENTICIDADE ---
   const gerarHashValidacao = async (dados) => {
     const msgUint8 = new TextEncoder().encode(dados);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
@@ -118,7 +116,6 @@ export default function ChecklistPage() {
       const dataFormatada = agora.toLocaleDateString('pt-BR');
       const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
-      // Criar Hash Único para este relatório
       const hashValidacao = await gerarHashValidacao(`${responsavelFormatado}-${agora.getTime()}`);
       const urlValidacao = `https://pmpf.pr.gov.br/validar/${hashValidacao}`;
       const qrCodeDataUrl = await QRCode.toDataURL(urlValidacao);
@@ -210,7 +207,6 @@ export default function ChecklistPage() {
         currentY = 30;
       }
 
-      // --- RODAPÉ COM ASSINATURA E QR CODE ---
       doc.setDrawColor(203, 213, 225);
       doc.line(60, currentY + 20, 150, currentY + 20);
       doc.setFontSize(8);
@@ -218,7 +214,6 @@ export default function ChecklistPage() {
       doc.setFont("helvetica", "bold");
       doc.text("Assinatura do Responsável (Digital)", 105, currentY + 25, { align: "center" });
       
-      // Adição do QR Code e Hash
       doc.addImage(qrCodeDataUrl, 'PNG', 165, currentY + 10, 25, 25);
       doc.setFont("helvetica", "italic");
       doc.setFontSize(7);
@@ -259,6 +254,11 @@ export default function ChecklistPage() {
     <div className="animate-in fade-in duration-700 space-y-6 max-w-full mx-auto p-4 flex flex-col relative">
       <Toaster richColors position="top-right" closeButton />
       
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+      
       {/* 1. CABEÇALHO E AÇÕES */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 shrink-0">
         <div>
@@ -292,9 +292,9 @@ export default function ChecklistPage() {
         </div>
       </div>
 
-      {/* 3. BARRA DE NAVEGAÇÃO (TABS) */}
+      {/* 3. BARRA DE NAVEGAÇÃO (TABS) - AJUSTADA PARA MOBILE */}
       <div className="bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200 w-full overflow-hidden">
-        <div className="flex flex-row justify-between gap-1 w-full overflow-x-auto no-scrollbar">
+        <div className="flex flex-row gap-1 w-full overflow-x-auto no-scrollbar">
           {categorias.map((categoria) => {
             const Icon = categoria.icon;
             const pendencias = getPendencias(categoria.id);
@@ -305,15 +305,15 @@ export default function ChecklistPage() {
                 key={categoria.id}
                 onClick={() => setAbaAtiva(categoria.id)}
                 className={`
-                  flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl
-                  text-[10px] font-bold uppercase tracking-tight transition-all duration-200 min-w-fit
+                  flex-1 flex shrink-0 items-center justify-center gap-2 px-3 py-2.5 rounded-xl
+                  text-[10px] font-bold uppercase tracking-tight transition-all duration-200
                   ${isActive 
                     ? "bg-white text-blue-600 shadow-md border border-blue-100" 
                     : "text-slate-400 hover:text-slate-600 hover:bg-white/40"}
                 `}
               >
                 <Icon size={14} className={isActive ? "text-blue-600" : "text-slate-400"} />
-                <span className="hidden md:inline">{categoria.label}</span>
+                <span className="whitespace-nowrap">{categoria.label}</span>
                 {pendencias > 0 && (
                   <span className={`
                     ml-1 px-1.5 py-0.5 rounded-full text-[9px]
@@ -340,12 +340,12 @@ export default function ChecklistPage() {
       </button>
 
       {/* 4. CONTEÚDO / TABELA */}
-      {isLoading ? (
-        <div className="bg-white border border-slate-100 p-6 space-y-4 rounded-2xl">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
-        </div>
-      ) : (
-        <div className="border border-slate-100 bg-white shadow-sm overflow-x-auto rounded-2xl">
+      <div className="border border-slate-100 bg-white shadow-sm overflow-x-auto rounded-2xl min-h-[450px]">
+        {isLoading ? (
+          <div className="bg-white p-6 space-y-4 rounded-2xl">
+            {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
+          </div>
+        ) : (
           <table className="w-full border-collapse table-fixed min-w-[900px]">
             <thead>
               <tr className="border-b border-slate-50 bg-slate-50/90 backdrop-blur-sm">
@@ -369,8 +369,8 @@ export default function ChecklistPage() {
               ))}
             </tbody>
           </table>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* 5. RODAPÉ DE FINALIZAÇÃO */}
       <div className="bg-white p-5 rounded-3xl border border-slate-100 flex flex-col md:flex-row justify-between items-center shadow-sm gap-6 shrink-0">
