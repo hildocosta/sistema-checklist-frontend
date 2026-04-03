@@ -37,7 +37,7 @@ export default function ChecklistPage() {
 
   // --- DADOS DO RESPONSÁVEL VIA SESSION ---
   const responsavelFormatado = session?.user?.name 
-    ? `${session.user.posto || "Sd. QP PM"} ${session.user.name} - RE ${session.user.re || "000.000-0"}`
+    ? `${session.user.posto || "Sd. QP PM"} ${session.user.name} - RG ${session.user.re || "000.000-0"}`
     : "1º SGT ANDERSON SILVA - RE 123.456-7";
 
   useEffect(() => {
