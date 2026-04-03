@@ -234,7 +234,8 @@ export default function ChecklistPage() {
           fileName,
           data: dataFormatada,
           hora: horaFormatada,
-          hash: hashValidacao
+          hash: hashValidacao,
+          responsavel: responsavelFormatado
         }),
       });
 
