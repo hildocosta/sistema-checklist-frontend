@@ -53,6 +53,7 @@ model Relatorio {
   hash        String   @unique  
   responsavel String            
   data        String            
-  hora        String           
+  hora        String   
+  pdfUrl      String?        
   createdAt   DateTime @default(now())
 }

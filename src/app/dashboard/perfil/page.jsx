@@ -80,9 +80,12 @@ export default function PerfilPage() {
     setIsUploading(true);
     try {
       const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
-        method: "POST",
-        body: file,
-      });
+       method: "POST",
+       body: file,
+       headers: {
+       "content-type": file.type,
+  },
+});
 
       if (!response.ok) throw new Error("Falha no upload");
       

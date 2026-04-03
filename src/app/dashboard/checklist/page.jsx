@@ -15,6 +15,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode"; 
 
+
 // --- IMPORTAÇÃO DOS DADOS ---
 import { INVENTARIO_COMPLETO, EFETIVO_17BPM } from "../../../data/inventario/index";
 
