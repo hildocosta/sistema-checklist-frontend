@@ -13,6 +13,7 @@ import { toast, Toaster } from "sonner";
 import { useSession } from "next-auth/react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import QRCode from "qrcode"; 
 
 // --- IMPORTAÇÃO DOS DADOS ---
 import { INVENTARIO_COMPLETO, EFETIVO_17BPM } from "../../../data/inventario/index";
@@ -90,6 +91,14 @@ export default function ChecklistPage() {
     toast.info("Checklist resetado com sucesso.");
   };
 
+  // --- FUNÇÃO PARA GERAR HASH DE AUTENTICIDADE ---
+  const gerarHashValidacao = async (dados) => {
+    const msgUint8 = new TextEncoder().encode(dados);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 24).toUpperCase();
+  };
+
   const gerarPDF = async () => {
     if (!isConferenciaCompleta) {
       toast.error("Conferência Incompleta", {
@@ -107,6 +116,11 @@ export default function ChecklistPage() {
       const dataFormatada = agora.toLocaleDateString('pt-BR');
       const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
+      // Criar Hash Único para este relatório
+      const hashValidacao = await gerarHashValidacao(`${responsavelFormatado}-${agora.getTime()}`);
+      const urlValidacao = `https://pmpf.pr.gov.br/validar/${hashValidacao}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(urlValidacao);
+
       doc.setTextColor(30, 41, 59);
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
@@ -189,21 +203,25 @@ export default function ChecklistPage() {
       });
 
       const pageHeight = doc.internal.pageSize.height;
-      if (currentY > pageHeight - 50) {
+      if (currentY > pageHeight - 60) {
         doc.addPage();
         currentY = 30;
       }
 
+      // --- RODAPÉ COM ASSINATURA E QR CODE ---
       doc.setDrawColor(203, 213, 225);
       doc.line(60, currentY + 20, 150, currentY + 20);
       doc.setFontSize(8);
       doc.setTextColor(30, 41, 59);
       doc.setFont("helvetica", "bold");
       doc.text("Assinatura do Responsável (Digital)", 105, currentY + 25, { align: "center" });
+      
+      // Adição do QR Code e Hash
+      doc.addImage(qrCodeDataUrl, 'PNG', 165, currentY + 10, 25, 25);
       doc.setFont("helvetica", "italic");
       doc.setFontSize(7);
       doc.setTextColor(148, 163, 184);
-      doc.text("Autenticidade garantida via sistema - ID: DM6YGIXQPQ", 105, currentY + 30, { align: "center" });
+      doc.text(`Autenticidade garantida via sistema - ID: ${hashValidacao}`, 105, currentY + 30, { align: "center" });
 
       const pdfBase64 = doc.output('datauristring');
       const fileName = `Checklist_17BPM_${dataFormatada.replace(/\//g, '-')}.pdf`;
@@ -215,7 +233,8 @@ export default function ChecklistPage() {
           pdfBase64,
           fileName,
           data: dataFormatada,
-          hora: horaFormatada
+          hora: horaFormatada,
+          hash: hashValidacao
         }),
       });
 
@@ -249,7 +268,7 @@ export default function ChecklistPage() {
         </div>
       </div>
 
-      {/* 2. BARRA DE PROGRESSO (REPOSICIONADA: ABAIXO DOS BOTÕES E ACIMA DA NAV) */}
+      {/* 2. BARRA DE PROGRESSO */}
       <div className="bg-white px-4 py-3 rounded-xl border border-slate-100 shadow-sm">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 shrink-0">
