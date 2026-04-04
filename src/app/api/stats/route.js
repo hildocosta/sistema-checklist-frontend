@@ -35,15 +35,34 @@ export async function GET() {
     if (turnoAlvo === "DIURNO" && (horaRel >= 6 && horaRel < 18)) isPendente = false;
     if (turnoAlvo === "NOTURNO" && (horaRel >= 18 || horaRel < 6)) isPendente = false;
 
-    const termosEstoque = ['DISPONÍVEL', 'DISPONIVEL', 'FURRIELAÇÃO', 'OK', '---', 'RESERVA'];
-    const termosAvaria = ['AVARIA', 'DEFEITO', 'EXTRAVIO', 'QUEBRADO', 'DANIFICADO', 'MANUTENÇÃO'];
+    // --- SUPER DICIONÁRIO DE CLASSIFICAÇÃO ---
+    const termosEstoque = [
+      'OK', 'DISPONIVEL', 'DISPONÍVEL', 'RESERVA', 'ESTOQUE', 'CARGA', '---', 
+      'FURRIELAÇÃO', 'FURRIELACAO', 'NO ARMARIO', 'NO ARMÁRIO', 'PRONTO'
+    ];
 
-    let avarias = 0, cautelas = 0, reserva = 0;
+    const termosDanos = [
+      'DANIFICADA', 'DANIFICADO', 'QUEBRADO', 'DEFEITO', 'ESTRAGADO', 'AMASSADO', 
+      'TRINCADO', 'FALHANDO', 'INOPERANTE', 'COM DEFEITO', 'QUEBRADA', 'DANO',
+      'ESTILHAÇADO', 'ROMPIID', 'ESTOURADO', 'SEM FUNCIONAMENTO', 'DETERIORADO'
+    ];
+
+    const termosManutencao = [
+      'MANUTENCAO', 'MANUTENÇÃO', 'REVISAO', 'REVISÃO', 'LIMPEZA', 'OFICINA', 
+      'CONSERTO', 'REPARO', 'ARMARIA', 'NA ARMARIA', 'PROJETO', 'LABORATÓRIO',
+      'CALIBRAGEM', 'RECARGA', 'CARREGANDO', 'MECÂNICO', 'EM TESTE'
+    ];
+
+    const termosExtravio = [
+      'EXTRAVIO', 'EXTRAVIADO', 'PERDIDO', 'SUMIDO', 'NÃO LOCALIZADO', 'FALTA',
+      'SUBTRAIDO', 'ROUBADO', 'FURTADO', 'DESAPARECIDO', 'EM FALTA', 'AUSENTE'
+    ];
+
+    let avariasCount = 0, cautelasCount = 0, reservaCount = 0;
     let historico = [];
     const processados = new Set();
 
     relatoriosDoDia.forEach(rel => {
-      // CORREÇÃO CRÍTICA: Garante que rel.itens seja um Array
       const itensArray = Array.isArray(rel.itens) 
         ? rel.itens 
         : (typeof rel.itens === 'string' ? JSON.parse(rel.itens) : []);
@@ -53,28 +72,43 @@ export async function GET() {
         const obsUpper = obsRaw.toUpperCase();
         const pagLivro = (item.pagLivro || "").trim();
 
-        // Lógica de Contagem (Apenas para o último relatório)
+        // Identificação de Categorias
+        const ehEstoque = !obsRaw || termosEstoque.some(t => obsUpper.includes(t));
+        const ehDano = termosDanos.some(t => obsUpper.includes(t));
+        const ehManutencao = termosManutencao.some(t => obsUpper.includes(t));
+        const ehExtravio = termosExtravio.some(t => obsUpper.includes(t));
+        const ehTecnico = ehDano || ehManutencao || ehExtravio;
+
+        // 1. LÓGICA DE CONTAGEM (Apenas do último relatório para os cards superiores)
         if (rel.id === ultimoRelatorio.id) {
-          if (!obsRaw || termosEstoque.some(t => obsUpper.includes(t))) {
-            reserva++; // Aqui ele vai contar os 96 itens do seu PDF
+          if (ehEstoque) {
+            reservaCount++;
+          } else if (ehTecnico) {
+            avariasCount++; // Chave danificada agora soma aqui!
           } else {
-            const temAvaria = termosAvaria.some(t => obsUpper.includes(t));
-            if (temAvaria) avarias++; else cautelas++;
+            cautelasCount++; // Apenas nomes de militares somam aqui
           }
         }
 
-        // Lógica do Motor de Busca (Histórico na Íntegra)
-        // Só adiciona ao log se não for item de estoque (ou seja, se for novidade)
-        if (obsRaw && !termosEstoque.some(t => obsUpper.includes(t))) {
+        // 2. LÓGICA DO MOTOR DE BUSCA (Logs da direita)
+        if (!ehEstoque) {
           const logKey = `${item.serie}-${obsUpper}-${pagLivro}`;
+          
           if (!processados.has(logKey)) {
             processados.add(logKey);
+
+            // Define o Status Visual do Log
+            let statusFinal = "CAUTELADO";
+            if (ehDano) statusFinal = "CRÍTICO";
+            if (ehManutencao) statusFinal = "MANUTENÇÃO";
+            if (ehExtravio) statusFinal = "EXTRAVIO";
+
             historico.push({
               id: item.serie || item.pmpr || "S/N",
               equipamento: item.desc || "Item",
               militar: obsRaw, 
               livro: pagLivro,
-              status: termosAvaria.some(t => obsUpper.includes(t)) ? "CRÍTICO" : "CAUTELADO",
+              status: statusFinal,
               hora: rel.hora,
               responsavel: rel.responsavel
             });
@@ -93,17 +127,18 @@ export async function GET() {
       },
       stats: {
         aderencia: isPendente ? "EXPIRADO" : "100%",
-        avarias,
-        emCautela: cautelas,
-        reserva, // Agora enviará o número correto
+        avarias: avariasCount,
+        emCautela: cautelasCount,
+        reserva: reservaCount,
       },
       grafico: [
-        { name: 'Disponível', valor: reserva, fill: isPendente ? '#cbd5e1' : '#10b981' },
-        { name: 'Cautela', valor: cautelas, fill: '#0284c7' },
-        { name: 'Avaria', valor: avarias, fill: '#ef4444' }
+        { name: 'Disponível', valor: reservaCount, fill: isPendente ? '#cbd5e1' : '#10b981' },
+        { name: 'Cautela', valor: cautelasCount, fill: '#0284c7' },
+        { name: 'Avaria', valor: avariasCount, fill: '#ef4444' }
       ],
       logs: historico
     });
+
   } catch (e) {
     console.error("Erro na API Stats:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
