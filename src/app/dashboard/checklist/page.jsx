@@ -179,7 +179,7 @@ export default function ChecklistPage() {
           item.qtd,
           { content: `${item.desc}\nSÉRIE: ${item.serie}`, styles: { fontStyle: 'bold' } },
           item.pmpr || "---",
-          item.cautela || "FURRIELAÇÃO",
+          item.cautela || "DISPONÍVEL",
           "OK"
         ]);
 
