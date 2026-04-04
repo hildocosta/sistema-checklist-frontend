@@ -35,46 +35,51 @@ export async function GET() {
     if (turnoAlvo === "DIURNO" && (horaRel >= 6 && horaRel < 18)) isPendente = false;
     if (turnoAlvo === "NOTURNO" && (horaRel >= 18 || horaRel < 6)) isPendente = false;
 
-    // TERMOS DE ESTOQUE ATUALIZADOS
-    const termosEstoque = [
-      'DISPONÍVEL', 'DISPONIVEL', 'FURRIELAÇÃO', 'FURRIELACAO', 
-      'RESERVA', 'ESTOQUE', 'OK', '---', 'CONFERIDO'
-    ];
-    
-    const termosAvaria = [
-      'AVARIA', 'DEFEITO', 'EXTRAVIO', 'QUEBRADO', 'DANIFICADO', 'FURTADA', 
-      'FURTADO', 'MANUTENÇÃO', 'MANUTENCAO', 'PROBLEMA', 'ANTENA', 'BASE'
-    ];
+    const termosEstoque = ['DISPONÍVEL', 'DISPONIVEL', 'FURRIELAÇÃO', 'OK', '---', 'RESERVA'];
+    const termosAvaria = ['AVARIA', 'DEFEITO', 'EXTRAVIO', 'QUEBRADO', 'DANIFICADO', 'MANUTENÇÃO'];
 
     let avarias = 0, cautelas = 0, reserva = 0;
     let historico = [];
     const processados = new Set();
 
     relatoriosDoDia.forEach(rel => {
-      (rel.itens || []).forEach(item => {
+      // CORREÇÃO CRÍTICA: Garante que rel.itens seja um Array
+      const itensArray = Array.isArray(rel.itens) 
+        ? rel.itens 
+        : (typeof rel.itens === 'string' ? JSON.parse(rel.itens) : []);
+
+      itensArray.forEach(item => {
         const obsRaw = (item.cautela || "").trim();
         const obsUpper = obsRaw.toUpperCase();
+        const pagLivro = (item.pagLivro || "").trim();
 
-        // Se estiver como DISPONÍVEL ou similar, conta como Reserva
-        if (!obsRaw || termosEstoque.some(t => obsUpper.includes(t))) {
-          if (rel.id === ultimoRelatorio.id) reserva++;
-          return;
+        // Lógica de Contagem (Apenas para o último relatório)
+        if (rel.id === ultimoRelatorio.id) {
+          if (!obsRaw || termosEstoque.some(t => obsUpper.includes(t))) {
+            reserva++; // Aqui ele vai contar os 96 itens do seu PDF
+          } else {
+            const temAvaria = termosAvaria.some(t => obsUpper.includes(t));
+            if (temAvaria) avarias++; else cautelas++;
+          }
         }
 
-        const logKey = `${item.serie}-${obsUpper}`;
-        if (processados.has(logKey)) return;
-        processados.add(logKey);
-
-        const temAvaria = termosAvaria.some(t => obsUpper.includes(t));
-        if (temAvaria) avarias++; else cautelas++;
-
-        historico.push({
-          id: item.serie || item.pmpr || "S/N",
-          militar: obsRaw,
-          status: temAvaria ? "CRÍTICO" : "CAUTELADO",
-          hora: rel.hora,
-          responsavel: rel.responsavel
-        });
+        // Lógica do Motor de Busca (Histórico na Íntegra)
+        // Só adiciona ao log se não for item de estoque (ou seja, se for novidade)
+        if (obsRaw && !termosEstoque.some(t => obsUpper.includes(t))) {
+          const logKey = `${item.serie}-${obsUpper}-${pagLivro}`;
+          if (!processados.has(logKey)) {
+            processados.add(logKey);
+            historico.push({
+              id: item.serie || item.pmpr || "S/N",
+              equipamento: item.desc || "Item",
+              militar: obsRaw, 
+              livro: pagLivro,
+              status: termosAvaria.some(t => obsUpper.includes(t)) ? "CRÍTICO" : "CAUTELADO",
+              hora: rel.hora,
+              responsavel: rel.responsavel
+            });
+          }
+        }
       });
     });
 
@@ -90,7 +95,7 @@ export async function GET() {
         aderencia: isPendente ? "EXPIRADO" : "100%",
         avarias,
         emCautela: cautelas,
-        reserva,
+        reserva, // Agora enviará o número correto
       },
       grafico: [
         { name: 'Disponível', valor: reserva, fill: isPendente ? '#cbd5e1' : '#10b981' },
@@ -100,6 +105,7 @@ export async function GET() {
       logs: historico
     });
   } catch (e) {
+    console.error("Erro na API Stats:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

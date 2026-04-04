@@ -54,6 +54,7 @@ model Relatorio {
   responsavel String            
   data        String            
   hora        String   
+  itens       Json
   pdfUrl      String?        
   createdAt   DateTime @default(now())
 }

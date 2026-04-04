@@ -7,15 +7,15 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
   try {
-    const { pdfBase64, fileName, data, hora, hash, responsavel } = await request.json();
+    // 1. EXTRAÇÃO DOS DADOS (Adicionado 'itens' que estava faltando)
+    const { pdfBase64, fileName, data, hora, hash, responsavel, itens } = await request.json();
 
-    // 1. Validação de Segurança (Fail-fast)
+    // 2. VALIDAÇÃO DE SEGURANÇA
     if (!pdfBase64 || !hash) {
       return NextResponse.json({ error: "Dados incompletos para processamento." }, { status: 400 });
     }
 
-    // 2. UPLOAD PARA VERCEL BLOB
-    // Extraímos apenas a parte binária do Base64
+    // 3. UPLOAD PARA VERCEL BLOB
     const base64Content = pdfBase64.split("base64,")[1];
     const buffer = Buffer.from(base64Content, "base64");
 
@@ -24,15 +24,15 @@ export async function POST(request) {
       blob = await put(`relatorios/${hash}.pdf`, buffer, {
         access: 'public',
         contentType: 'application/pdf',
-        addRandomSuffix: true, // Evita conflitos caso o mesmo hash tente subir arquivos diferentes
+        addRandomSuffix: true,
       });
     } catch (blobError) {
       console.error("❌ Erro Vercel Blob:", blobError);
       throw new Error("Falha ao salvar arquivo no Storage.");
     }
 
-    // 3. SALVAR NO BANCO DE DADOS (NEON)
-    // Salvamos primeiro no banco para garantir a integridade da auditoria
+    // 4. SALVAR NO BANCO DE DADOS (NEON/PRISMA)
+    // CORREÇÃO: Agora passamos o campo 'itens' para o banco de dados
     const novoRelatorio = await prisma.relatorio.create({
       data: {
         hash: hash,
@@ -40,12 +40,12 @@ export async function POST(request) {
         data: data,
         hora: hora,
         pdfUrl: blob.url,
+        // Se 'itens' vier vazio do front, salvamos um array vazio para não dar erro
+        itens: itens || [], 
       },
     });
 
-    // 4. CONFIGURAÇÃO DO GMAIL (Nodemailer)
-    // Dica: Crie o transporter fora do try/catch se quiser reutilizá-lo, 
-    // mas aqui dentro garante isolamento de erro.
+    // 5. CONFIGURAÇÃO DO GMAIL (Nodemailer)
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
@@ -56,9 +56,7 @@ export async function POST(request) {
       },
     });
 
-    // 5. MONTAGEM E ENVIO DO E-MAIL
-    // Encapsulamos o e-mail em um try/catch próprio porque, se o e-mail falhar, 
-    // o relatório já está salvo e o usuário não precisa refazer o checklist.
+    // 6. MONTAGEM E ENVIO DO E-MAIL
     try {
       const mailOptions = {
         from: `"Sistema de Carga 17º BPM" <${process.env.EMAIL_USER}>`,
@@ -89,7 +87,6 @@ export async function POST(request) {
       await transporter.sendMail(mailOptions);
     } catch (emailError) {
       console.error("⚠️ E-mail não enviado, mas relatório salvo:", emailError);
-      // Não damos throw aqui para o cliente receber sucesso, já que o banco/blob funcionou
     }
 
     return NextResponse.json({ 
