@@ -117,7 +117,7 @@ export default function ChecklistPage() {
       const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
       const hashValidacao = await gerarHashValidacao(`${responsavelFormatado}-${agora.getTime()}`);
-      const urlValidacao = `https://pmpf.pr.gov.br/validar/${hashValidacao}`;
+      const urlValidacao = `https://sistema-checklist-frontend.vercel.app/validar/${hashValidacao}`;
       const qrCodeDataUrl = await QRCode.toDataURL(urlValidacao);
 
       doc.setTextColor(30, 41, 59);
