@@ -106,7 +106,7 @@ export async function GET() {
         responsavel: ultimoRelatorio.responsavel
       },
       stats: {
-        aderencia: isPendente ? "EXPIRADO" : "100%",
+        aderencia: isPendente ? "PENDENTE" : "100%",
         avarias: avariasCount,
         emCautela: cautelasCount,
         reserva: reservaCount,

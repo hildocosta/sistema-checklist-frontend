@@ -1,4 +1,6 @@
-import { prisma } from "../../../lib/prisma"; // Verifique se o caminho está correto
+import { prisma } from "../../../lib/prisma";
+import Image from "next/image";
+import Link from "next/link";
 import { 
   ShieldCheck, 
   CheckCircle2, 
@@ -6,11 +8,12 @@ import {
   User, 
   Calendar, 
   Clock, 
-  Building2
+  Building2,
+  FileSearch
 } from "lucide-react";
+import Footer from "../../components/Footer";
 
 export default async function ValidarPage({ params }) {
-  // Ajuste para Next.js 15: desestruturar params após o await
   const { hash } = await params;
 
   // Busca o registro no banco de dados pelo Hash
@@ -19,112 +22,117 @@ export default async function ValidarPage({ params }) {
   });
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4 font-sans">
-      <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl shadow-blue-900/10 border border-slate-100 overflow-hidden">
-        
-        {/* Header Institucional */}
-        <div className="bg-slate-900 p-8 text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-          <ShieldCheck className="mx-auto mb-3 text-blue-400 relative z-10" size={48} />
-          <h1 className="text-white text-lg font-bold uppercase tracking-[0.2em] relative z-10">
-            Autenticação Digital
-          </h1>
-          <p className="text-slate-400 text-[9px] font-medium uppercase tracking-widest mt-1 relative z-10">
-            PMPR • 17º BPM • 4ª SEÇÃO
-          </p>
-        </div>
+    <main className="h-screen w-full bg-login-image flex flex-col items-center justify-between font-sans overflow-hidden">
+      
+      <div className="flex-1 flex items-start justify-center w-full p-4 pt-20 overflow-y-auto no-scrollbar">
+        <div className="relative w-full max-w-sm">
+          
+          {/* Cabeçalho Flutuante idêntico ao Login */}
+          <header className="card-header-floating">
+            <Image 
+              src="/assets/image/bg-profile.png" 
+              alt="Logo 17BPM" 
+              width={80} 
+              height={80} 
+              className="logo-style" 
+              priority 
+            />
+          </header>
 
-        <div className="p-8">
-          {relatorio ? (
-            <div className="space-y-6">
-              {/* Status Sucesso */}
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 rounded-full mb-2 border border-emerald-100">
-                  <CheckCircle2 className="text-emerald-500" size={40} />
-                </div>
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Documento Válido</h2>
-                <p className="text-slate-500 text-[13px] px-4 leading-relaxed">
-                  As informações abaixo foram conferidas e constam em nossos registros oficiais de carga.
-                </p>
-              </div>
-
-              {/* Card de Detalhes */}
-              <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 space-y-5">
-                <div className="flex items-start gap-4">
-                  <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 text-blue-600">
-                    <User size={18} />
+          <div className="bg-white rounded-xl shadow-2xl p-8 pt-24 pb-10 border border-slate-100">
+            
+            {relatorio ? (
+              <div className="space-y-6">
+                {/* Status Sucesso */}
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 rounded-full mb-3 border border-emerald-100">
+                    <CheckCircle2 className="text-emerald-500" size={32} />
                   </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Responsável pela Conferência</p>
-                    <p className="text-sm font-bold text-slate-700 leading-tight uppercase">
+                  <h2 className="text-xl font-bold text-slate-700">Relatório Válido</h2>
+                  <p className="text-xs text-slate-500">Documento autenticado no sistema</p>
+                </div>
+
+                {/* Grid de Informações Estilo Formulário */}
+                <div className="space-y-4">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="flex items-center gap-3 mb-1">
+                      <User size={14} className="text-blue-500" />
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Responsável</span>
+                    </div>
+                    <p className="text-sm font-bold text-slate-700 uppercase">
                       {relatorio.responsavel}
                     </p>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200/50">
-                  <div className="flex items-start gap-3 text-left">
-                    <Calendar className="text-slate-400 mt-0.5" size={14} />
-                    <div>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Data</p>
-                      <p className="text-sm font-bold text-slate-700">{relatorio.data}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Calendar size={12} className="text-slate-400" />
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">Data</span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-700">{relatorio.data}</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock size={12} className="text-slate-400" />
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">Hora</span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-700">{relatorio.hora}</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 text-left">
-                    <Clock className="text-slate-400 mt-0.5" size={14} />
-                    <div>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Hora</p>
-                      <p className="text-sm font-bold text-slate-700">{relatorio.hora}</p>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex items-start gap-4 pt-4 border-t border-slate-200/50">
-                  <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-500">
-                    <Building2 size={18} />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Unidade Detentora</p>
-                    <p className="text-sm font-bold text-slate-700 leading-tight">
-                      17º Batalhão de Polícia Militar - SJP
+                  <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50">
+                    <div className="flex items-center gap-3 mb-1">
+                      <FileSearch size={14} className="text-blue-600" />
+                      <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Código de Verificação</span>
+                    </div>
+                    <p className="text-[10px] font-mono font-bold text-blue-600 break-all uppercase">
+                      {hash}
                     </p>
                   </div>
                 </div>
-              </div>
 
-              {/* ID de Verificação */}
-              <div className="text-center pt-2">
-                <div className="inline-block px-4 py-1.5 bg-slate-100 rounded-full border border-slate-200">
-                  <span className="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-tighter">ID: {hash}</span>
+                <div className="pt-4 text-center">
+                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                     PMPR • 17º BPM • SJP
+                   </p>
                 </div>
               </div>
-            </div>
-          ) : (
-            /* Status Erro */
-            <div className="py-10 text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-red-50 rounded-full border border-red-100">
-                <XCircle className="text-red-500" size={48} />
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black text-slate-800">Não Encontrado</h2>
-                <p className="text-slate-500 text-[13px] px-6 leading-relaxed">
-                  Este código de autenticidade não é reconhecido pelo sistema. O documento pode ser inválido ou expirado.
-                </p>
-              </div>
-              <div className="pt-4 px-8 text-[10px] text-slate-400 italic leading-tight">
-                Atenção: A falsificação de documentos públicos é crime conforme o Art. 297 do Código Penal.
-              </div>
-            </div>
-          )}
-        </div>
+            ) : (
+              /* Status Erro */
+              <div className="py-6 text-center space-y-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-50 rounded-full border border-red-100">
+                  <XCircle className="text-red-500" size={32} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-700">Não Encontrado</h2>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Este código não consta em nossos registros oficiais.
+                  </p>
+                </div>
+                
+                <Link 
+                  href="/login" 
+                  className="inline-block text-sm text-blue-500 font-bold hover:underline"
+                >
+                  Voltar para o Início
+                </Link>
 
-        {/* Footer */}
-        <div className="bg-slate-50 p-6 text-center border-t border-slate-100">
-          <p className="text-[9px] text-slate-400 font-bold tracking-[0.15em] uppercase">
-            Sistema de Gestão de Carga Institucional
-          </p>
+                <div className="pt-4 border-t border-slate-50">
+                  <p className="text-[9px] text-red-400 italic px-4 leading-tight">
+                    A falsificação de documentos públicos é crime conforme o Art. 297 do Código Penal.
+                  </p>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
-    </div>
+
+      <footer className="w-full">
+        <Footer />
+      </footer>
+    </main>
   );
 }
