@@ -11,7 +11,7 @@ import {
   Building2,
   FileSearch
 } from "lucide-react";
-import Footer from "../../components/Footer";
+import Footer from "../../../components/Footer";
 
 export default async function ValidarPage({ params }) {
   const { hash } = await params;
