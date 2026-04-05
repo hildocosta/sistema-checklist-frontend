@@ -40,7 +40,7 @@ export async function GET() {
     const termosEstoque = ['OK', 'DISPONIVEL', 'DISPONÍVEL', 'RESERVA', 'ESTOQUE', 'CARGA', '---', 'FURRIELAÇÃO', 'FURRIELACAO', 'NO ARMARIO', 'PRONTO'];
     const termosDanos = ['DANIFICADA', 'DANIFICADO', 'QUEBRADO', 'DEFEITO', 'ESTRAGADO', 'AMASSADO', 'INOPERANTE', 'QUEBRADA', 'DANO'];
     const termosManutencao = ['MANUTENCAO', 'MANUTENÇÃO', 'REVISAO', 'REVISÃO', 'LIMPEZA', 'OFICINA', 'CONSERTO', 'ARMARIA'];
-    const termosExtravio = ['EXTRAVIO', 'EXTRAVIADO', 'PERDIDO', 'SUMIDO', 'NÃO LOCALIZADO', 'FALTA', 'ROUBADO'];
+   const termosExtravio = ['EXTRAVIO', 'EXTRAVIADA', 'EXTRAVIADO', 'PERDIDO', 'PERDIDA', 'SUMIDO', 'SUMIDA', 'NÃO LOCALIZADO', 'FALTA', 'ROUBADO', 'ROUBADA', 'FURTADO', 'FURTADA'];
 
     let avariasCount = 0, cautelasCount = 0, reservaCount = 0;
     let historico = [];
