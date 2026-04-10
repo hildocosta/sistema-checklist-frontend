@@ -5,20 +5,55 @@ const prisma = new PrismaClient();
 
 export async function POST(request) {
   try {
-    const { id, name, re, posto } = await request.json();
+    // 1. Recebemos todos os campos enviados pelo App
+    const { 
+      id, 
+      name, 
+      email, 
+      re, 
+      posto, 
+      telefone, 
+      setor, 
+      unidade 
+    } = await request.json();
 
+    // 2. Atualizamos o usuário no Banco Neon
     const updatedUser = await prisma.user.update({
       where: { id: id },
       data: {
         name,
+        email,
         re,
-        posto
+        posto,
+        telefone,
+        setor,
+        unidade
       }
     });
 
-    return NextResponse.json({ message: "Sucesso" }, { status: 200 });
+    return NextResponse.json({ 
+      message: "Perfil atualizado com sucesso!",
+      user: {
+        name: updatedUser.name,
+        re: updatedUser.re,
+        posto: updatedUser.posto
+      }
+    }, { status: 200 });
+
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Erro ao atualizar no banco" }, { status: 500 });
+    console.error("Erro ao atualizar perfil:", error);
+    
+    // Tratamento básico de erro de RE duplicado
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: "Este RE já está cadastrado em outra conta." }, 
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Erro interno ao atualizar no banco de dados." }, 
+      { status: 500 }
+    );
   }
 }
