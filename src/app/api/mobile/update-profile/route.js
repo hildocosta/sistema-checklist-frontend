@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export async function POST(request) {
   try {
-    // 1. Recebemos todos os campos enviados pelo App
+    // 1. Incluímos 'image' aqui para extrair do corpo da requisição
     const { 
       id, 
       name, 
@@ -14,7 +14,8 @@ export async function POST(request) {
       posto, 
       telefone, 
       setor, 
-      unidade 
+      unidade,
+      image // <-- Novo campo
     } = await request.json();
 
     // 2. Atualizamos o usuário no Banco Neon
@@ -27,7 +28,8 @@ export async function POST(request) {
         posto,
         telefone,
         setor,
-        unidade
+        unidade,
+        image // <-- Adicionado ao Prisma
       }
     });
 
@@ -36,14 +38,14 @@ export async function POST(request) {
       user: {
         name: updatedUser.name,
         re: updatedUser.re,
-        posto: updatedUser.posto
+        posto: updatedUser.posto,
+        image: updatedUser.image // Retornando a imagem atualizada
       }
     }, { status: 200 });
 
   } catch (error) {
     console.error("Erro ao atualizar perfil:", error);
     
-    // Tratamento básico de erro de RE duplicado
     if (error.code === 'P2002') {
       return NextResponse.json(
         { error: "Este RE já está cadastrado em outra conta." }, 
