@@ -12,7 +12,7 @@ export async function GET() {
     const inicioDia = new Date();
     inicioDia.setHours(0, 0, 0, 0);
 
-    // Buscamos os relatórios do dia, do mais recente para o mais antigo
+    // 1. Buscar relatórios do dia
     const relatoriosDoDia = await prisma.relatorio.findMany({
       where: { createdAt: { gte: inicioDia } },
       orderBy: { createdAt: 'desc' }
@@ -30,63 +30,88 @@ export async function GET() {
     }
 
     const ultimoRelatorio = relatoriosDoDia[0];
-    const horaRel = new Date(ultimoRelatorio.createdAt).getHours();
+    const dataRelatorio = new Date(ultimoRelatorio.createdAt);
+    const horaRel = dataRelatorio.getHours();
     
+    // Lógica de pendência
     let isPendente = true;
     if (turnoAlvo === "DIURNO" && (horaRel >= 6 && horaRel < 18)) isPendente = false;
     if (turnoAlvo === "NOTURNO" && (horaRel >= 18 || horaRel < 6)) isPendente = false;
 
-    // --- SUPER DICIONÁRIO ---
-    const termosEstoque = ['OK', 'DISPONIVEL', 'DISPONÍVEL', 'RESERVA', 'ESTOQUE', 'CARGA', '---', 'FURRIELAÇÃO', 'FURRIELACAO', 'NO ARMARIO', 'PRONTO'];
-    const termosDanos = ['DANIFICADA', 'DANIFICADO', 'QUEBRADO', 'DEFEITO', 'ESTRAGADO', 'AMASSADO', 'INOPERANTE', 'QUEBRADA', 'DANO'];
-    const termosManutencao = ['MANUTENCAO', 'MANUTENÇÃO', 'REVISAO', 'REVISÃO', 'LIMPEZA', 'OFICINA', 'CONSERTO', 'ARMARIA'];
-   const termosExtravio = ['EXTRAVIO', 'EXTRAVIADA', 'EXTRAVIADO', 'PERDIDO', 'PERDIDA', 'SUMIDO', 'SUMIDA', 'NÃO LOCALIZADO', 'FALTA', 'ROUBADO', 'ROUBADA', 'FURTADO', 'FURTADA'];
+    // --- DICIONÁRIOS DE STATUS ---
+    const termosEstoque = ['OK', 'DISPONIVEL', 'DISPONÍVEL', 'RESERVA', 'ESTOQUE', 'CARGA', '---', 'FURRIELAÇÃO', 'NO ARMARIO', 'PRONTO'];
+    const termosDanos = ['DANIFICADA', 'DANIFICADO', 'QUEBRADO', 'DEFEITO', 'ESTRAGADO', 'INOPERANTE', 'DANO'];
+    const termosManutencao = ['MANUTENCAO', 'MANUTENÇÃO', 'REVISAO', 'REVISÃO', 'OFICINA', 'ARMARIA'];
+    const termosExtravio = ['EXTRAVIO', 'EXTRAVIADA', 'EXTRAVIADO', 'PERDIDO', 'SUMIDO', 'NÃO LOCALIZADO', 'FALTA', 'ROUBADO', 'ROUBADA', 'FURTADO'];
 
     let avariasCount = 0, cautelasCount = 0, reservaCount = 0;
     let historico = [];
-    
-    // Este Set garantirá que cada item (Pistola, Chave, etc) só apareça UMA VEZ no log (a mais recente)
     const itensProcessadosNoLog = new Set();
 
-    relatoriosDoDia.forEach(rel => {
-      const itensArray = Array.isArray(rel.itens) 
-        ? rel.itens 
-        : (typeof rel.itens === 'string' ? JSON.parse(rel.itens) : []);
+    // 2. PROCESSAMENTO PRIORITÁRIO: Itens do último checklist (Cards e Log Principal)
+    const itensUltimo = Array.isArray(ultimoRelatorio.itens) 
+      ? ultimoRelatorio.itens 
+      : JSON.parse(ultimoRelatorio.itens || "[]");
 
+    itensUltimo.forEach(item => {
+      const obsRaw = (item.cautela || "").trim();
+      const obsUpper = obsRaw.toUpperCase();
+      const itemID = (item.serie || item.pmpr || item.desc || "SEM-ID").trim();
+
+      const ehEstoque = !obsRaw || termosEstoque.some(t => obsUpper.includes(t));
+      const ehDano = termosDanos.some(t => obsUpper.includes(t));
+      const ehManutencao = termosManutencao.some(t => obsUpper.includes(t));
+      const ehExtravio = termosExtravio.some(t => obsUpper.includes(t));
+      const ehTecnico = ehDano || ehManutencao || ehExtravio;
+
+      // Contagem para os Cards
+      if (ehEstoque) reservaCount++;
+      else if (ehTecnico) avariasCount++;
+      else cautelasCount++;
+
+      // Adicionar ao Log se não for estoque
+      if (!ehEstoque) {
+        itensProcessadosNoLog.add(itemID);
+        
+        let statusFinal = "CAUTELADO";
+        if (ehDano) statusFinal = "CRÍTICO";
+        if (ehManutencao) statusFinal = "MANUTENÇÃO";
+        if (ehExtravio) statusFinal = "EXTRAVIO";
+
+        historico.push({
+          id: itemID,
+          equipamento: item.desc || "Equipamento",
+          militar: obsRaw, 
+          livro: item.pagLivro || "---",
+          status: statusFinal,
+          hora: ultimoRelatorio.hora,
+          responsavel: ultimoRelatorio.responsavel
+        });
+      }
+    });
+
+    // 3. COMPLEMENTO: Buscar movimentações de outros checklists do mesmo dia
+    // (Caso algum item tenha sido cautelado de manhã e não apareça no checklist de agora)
+    relatoriosDoDia.slice(1).forEach(rel => {
+      const itensArray = Array.isArray(rel.itens) ? rel.itens : JSON.parse(rel.itens || "[]");
+      
       itensArray.forEach(item => {
         const obsRaw = (item.cautela || "").trim();
-        const obsUpper = obsRaw.toUpperCase();
-        
-        // Chave única do item para evitar duplicidade entre turnos
         const itemID = (item.serie || item.pmpr || item.desc || "SEM-ID").trim();
-
+        const obsUpper = obsRaw.toUpperCase();
         const ehEstoque = !obsRaw || termosEstoque.some(t => obsUpper.includes(t));
-        const ehDano = termosDanos.some(t => obsUpper.includes(t));
-        const ehManutencao = termosManutencao.some(t => obsUpper.includes(t));
-        const ehExtravio = termosExtravio.some(t => obsUpper.includes(t));
-        const ehTecnico = ehDano || ehManutencao || ehExtravio;
 
-        // 1. CONTAGEM DOS CARDS: Baseado EXCLUSIVAMENTE no último relatório enviado (O estado agora)
-        if (rel.id === ultimoRelatorio.id) {
-          if (ehEstoque) reservaCount++;
-          else if (ehTecnico) avariasCount++;
-          else cautelasCount++;
-        }
-
-        // 2. LÓGICA DO LOG (DIREITA): Evita duplicidade se o status for o mesmo do turno anterior
-        // Só entra no log se não for estoque e se esse item específico ainda não apareceu na lista
         if (!ehEstoque && !itensProcessadosNoLog.has(itemID)) {
+          itensProcessadosNoLog.add(itemID);
           
-          itensProcessadosNoLog.add(itemID); // Bloqueia esse item para relatórios mais antigos do mesmo dia
-
           let statusFinal = "CAUTELADO";
-          if (ehDano) statusFinal = "CRÍTICO";
-          if (ehManutencao) statusFinal = "MANUTENÇÃO";
-          if (ehExtravio) statusFinal = "EXTRAVIO";
+          if (termosDanos.some(t => obsUpper.includes(t))) statusFinal = "CRÍTICO";
+          if (termosManutencao.some(t => obsUpper.includes(t))) statusFinal = "MANUTENÇÃO";
+          if (termosExtravio.some(t => obsUpper.includes(t))) statusFinal = "EXTRAVIO";
 
           historico.push({
             id: itemID,
-            equipamento: item.desc || "Item",
+            equipamento: item.desc || "Equipamento",
             militar: obsRaw, 
             livro: item.pagLivro || "---",
             status: statusFinal,

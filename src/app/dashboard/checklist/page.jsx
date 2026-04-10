@@ -180,13 +180,13 @@ export default function ChecklistPage() {
           { content: `${item.desc}\nSÉRIE: ${item.serie}`, styles: { fontStyle: 'bold' } },
           item.pmpr || "---",
           item.cautela || "DISPONÍVEL",
-          item.livroPag || "---",
-          "OK"
+          item.pagLivro || "---",
+          "OK" // <<--- AJUSTADO: Agora exibe OK em vez de ---
         ]);
 
         autoTable(doc, {
           startY: currentY + 10,
-          head: [["ORD", "QTD", "EQUIPAMENTO / ESPECIFICAÇÃO", "PMPR", "OBS", "CONF."]],
+          head: [["ORD", "QTD", "EQUIPAMENTO / ESPECIFICAÇÃO", "PMPR", "OBS", "LIVRO", "CONF."]],
           body: tableData,
           theme: 'grid',
           headStyles: { fillColor: [30, 41, 59], fontSize: 7, halign: 'center' },
@@ -195,7 +195,8 @@ export default function ChecklistPage() {
             0: { cellWidth: 10, halign: 'center' }, 
             1: { cellWidth: 10, halign: 'center' }, 
             3: { halign: 'center' },
-            5: { textColor: [22, 163, 74], fontStyle: 'bold', halign: 'center' } 
+            5: { halign: 'center' },
+            6: { textColor: [22, 163, 74], fontStyle: 'bold', halign: 'center' } 
           }
         });
 
@@ -252,6 +253,7 @@ export default function ChecklistPage() {
     }
   };
 
+  // ... (restante do componente permanece igual)
   return (
     <div className="animate-in fade-in duration-700 space-y-6 max-w-full mx-auto p-4 flex flex-col relative">
       <Toaster richColors position="top-right" closeButton />
@@ -294,7 +296,7 @@ export default function ChecklistPage() {
         </div>
       </div>
 
-      {/* 3. BARRA DE NAVEGAÇÃO (TABS) - AJUSTADA PARA MOBILE */}
+      {/* 3. BARRA DE NAVEGAÇÃO (TABS) */}
       <div className="bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200 w-full overflow-hidden">
         <div className="flex flex-row gap-1 w-full overflow-x-auto no-scrollbar">
           {categorias.map((categoria) => {
@@ -399,6 +401,7 @@ export default function ChecklistPage() {
   );
 }
 
+// ... (Subcomponente RowChecklist também permanece igual)
 function RowChecklist({ item, onToggle, onUpdate }) {
   const [searchTerm, setSearchTerm] = useState(item.cautela || "");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -467,7 +470,7 @@ function RowChecklist({ item, onToggle, onUpdate }) {
                   }} 
                   className="w-full px-3 py-2 text-left hover:bg-blue-50 text-xs font-medium text-slate-600 flex justify-between border-b border-slate-50 last:border-0"
                 >
-                  {m.nome} <span className="text-slate-400 font-mono text-[10px]">RE {m.re}</span>
+                  {m.nome} <span className="text-slate-400 font-mono text-[10px]">RG {m.re}</span>
                 </button>
               ))}
             </div>
