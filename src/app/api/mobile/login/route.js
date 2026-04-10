@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 
-// Inicializa o Prisma para conectar ao Neon
-// Usar uma instância global ou garantir que não criamos múltiplas conexões em dev
+// Inicializa o Prisma
 const prisma = new PrismaClient();
 
 export async function POST(request) {
@@ -43,20 +42,25 @@ export async function POST(request) {
       );
     }
 
-    // 5. LOGIN SUCESSO: Retorna os dados para o App
-    // Usamos o operador ?? para tratar valores null vindos do banco
+    // 5. LOGIN SUCESSO: Retorna o objeto COMPLETO para o App
+    // Agora incluindo os campos que estavam causando o bug de sincronização
     return NextResponse.json({
       id: user.id,
       name: user.name || "Militar",
       email: user.email,
-      re: user.re ?? "Não cadastrado",      // Se for null, envia o texto
-      posto: user.posto ?? "Soldado",       // Valor padrão caso esteja vazio
+      re: user.re ?? "Não cadastrado",
+      posto: user.posto ?? "Sd. QP PM",
       unidade: user.unidade ?? "17º BPM",
-      nivel: user.nivel ?? "Operador"
+      nivel: user.nivel ?? "Operador",
+      
+      // CAMPOS ADICIONADOS PARA RESOLVER O BUG:
+      telefone: user.telefone ?? "",
+      setor: user.setor ?? "",
+      image: user.image ?? "" 
     });
 
   } catch (error) {
-    console.error("Erro na API Mobile:", error);
+    console.error("Erro na API Mobile Login:", error);
     return NextResponse.json(
       { error: "Erro interno no servidor de dados." }, 
       { status: 500 }
