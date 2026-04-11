@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from "@prisma/client";
 
-// Inicializa o Prisma Client
 const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
@@ -11,13 +10,13 @@ export async function GET() {
     const agora = new Date();
     const horaAtual = agora.getHours();
     
-    // 1. Define o turno operacional alvo (DIURNO: 06h às 18h | NOTURNO: 18h às 06h)
-    const turnoAlvo = (horaAtual >= 6 && horaAtual < 18) ? "DIURNO" : "NOTURNO";
+    // 1. Define qual turno o sistema ESPERA no momento atual
+    const turnoEsperadoAgora = (horaAtual >= 6 && horaAtual < 18) ? "DIURNO" : "NOTURNO";
 
     const inicioDia = new Date();
     inicioDia.setHours(0, 0, 0, 0);
 
-    // 2. Busca relatórios registrados hoje no banco de dados
+    // 2. Busca os relatórios de hoje
     const relatoriosDoDia = await prisma.relatorio.findMany({
       where: { 
         createdAt: { gte: inicioDia } 
@@ -25,11 +24,11 @@ export async function GET() {
       orderBy: { createdAt: 'desc' }
     });
 
-    // Caso não exista nenhum checklist registrado hoje
+    // Se não houver nenhum registro hoje, está pendente
     if (relatoriosDoDia.length === 0) {
       return NextResponse.json({ 
         isPendente: true, 
-        turnoAlvo,
+        turnoAlvo: turnoEsperadoAgora,
         ultimoChecklist: { responsavel: "NENHUM REGISTRO", hora: "--:--", data: "--/--/----" },
         stats: { aderencia: "PENDENTE", avarias: 0, emCautela: 0, reserva: 0 },
         logs: [] 
@@ -40,12 +39,15 @@ export async function GET() {
     const dataRelatorio = new Date(ultimoRelatorio.createdAt);
     const horaRel = dataRelatorio.getHours();
     
-    // 3. Lógica de pendência: Verifica se o último checklist bate com o turno atual
-    let isPendente = true;
-    if (turnoAlvo === "DIURNO" && (horaRel >= 6 && horaRel < 18)) isPendente = false;
-    if (turnoAlvo === "NOTURNO" && (horaRel >= 18 || horaRel < 6)) isPendente = false;
+    // 3. Identifica a qual turno pertence o ÚLTIMO relatório enviado
+    const turnoDoRelatorio = (horaRel >= 6 && horaRel < 18) ? "DIURNO" : "NOTURNO";
+    
+    // LÓGICA DE PENDÊNCIA: 
+    // Se o turno que o sistema espera agora é diferente do turno do último relatório enviado, está pendente.
+    // Ex: Agora é 18:33 (NOTURNO) e o último foi 17:51 (DIURNO). NOTURNO !== DIURNO = PENDENTE.
+    const isPendente = turnoEsperadoAgora !== turnoDoRelatorio;
 
-    // --- DICIONÁRIOS DE FILTRO PARA IDENTIFICAÇÃO DE STATUS ---
+    // --- DICIONÁRIOS DE FILTRO ---
     const termosEstoque = ['OK', 'DISPONIVEL', 'DISPONÍVEL', 'RESERVA', 'ESTOQUE', 'CARGA', '---', 'FURRIELAÇÃO', 'NO ARMARIO', 'PRONTO'];
     const termosDanos = ['DANIFICADA', 'DANIFICADO', 'QUEBRADO', 'DEFEITO', 'ESTRAGADO', 'INOPERANTE', 'DANO'];
     const termosManutencao = ['MANUTENCAO', 'MANUTENÇÃO', 'REVISAO', 'REVISÃO', 'OFICINA', 'ARMARIA'];
@@ -56,7 +58,6 @@ export async function GET() {
     let reservaCount = 0;
     let historico = [];
 
-    // 4. Processar itens do último checklist para as estatísticas do Mobile
     const itens = Array.isArray(ultimoRelatorio.itens) 
       ? ultimoRelatorio.itens 
       : JSON.parse(ultimoRelatorio.itens || "[]");
@@ -72,7 +73,6 @@ export async function GET() {
       const ehExtravio = termosExtravio.some(t => obsUpper.includes(t));
       const ehTecnico = ehDano || ehManutencao || ehExtravio;
 
-      // Classificação para os Cards do Dashboard
       if (ehEstoque) {
         reservaCount++;
       } else if (ehTecnico) {
@@ -81,7 +81,6 @@ export async function GET() {
         cautelasCount++;
       }
 
-      // Se for uma alteração (não for estoque), adiciona ao log de ocorrências
       if (!ehEstoque) {
         let statusFinal = "CAUTELADO";
         if (ehDano) statusFinal = "CRÍTICO";
@@ -100,10 +99,9 @@ export async function GET() {
       }
     });
 
-    // 5. Resposta JSON formatada para o App Mobile
     return NextResponse.json({
       isPendente,
-      turnoAlvo,
+      turnoAlvo: isPendente ? turnoEsperadoAgora : turnoDoRelatorio,
       ultimoChecklist: {
         data: ultimoRelatorio.data,
         hora: ultimoRelatorio.hora,
@@ -120,12 +118,8 @@ export async function GET() {
 
   } catch (error) {
     console.error("Erro na API Dashboard Mobile:", error);
-    return NextResponse.json(
-      { error: "Erro ao processar dados do batalhão" }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   } finally {
-    // Opcional: Desconecta o prisma se necessário (em Serverless o Next lida bem com isso)
     await prisma.$disconnect();
   }
 }
