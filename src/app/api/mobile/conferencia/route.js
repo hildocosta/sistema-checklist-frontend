@@ -1,129 +1,123 @@
 import { NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
+import { put } from "@vercel/blob";
 import { PrismaClient } from "@prisma/client";
-
 
 const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
   try {
-    const agora = new Date();
-    const horaAtual = agora.getHours();
-    
-    const turnoAlvo = (horaAtual >= 6 && horaAtual < 18) ? "DIURNO" : "NOTURNO";
+    const { searchParams } = new URL(request.url);
+    const dataFiltro = searchParams.get('data');
 
-    const inicioDia = new Date();
-    inicioDia.setHours(0, 0, 0, 0);
-
-   
-    const relatoriosDoDia = await prisma.relatorio.findMany({
-      where: { 
-        createdAt: { gte: inicioDia } 
-      },
-      orderBy: { createdAt: 'desc' }
+    const relatorios = await prisma.relatorio.findMany({
+      where: dataFiltro ? { data: dataFiltro } : {},
+      orderBy: { createdAt: 'desc' },
     });
 
-    
-    if (relatoriosDoDia.length === 0) {
-      return NextResponse.json({ 
-        isPendente: true, 
-        turnoAlvo,
-        ultimoChecklist: { responsavel: "NENHUM REGISTRO", hora: "--:--", data: "--/--/----" },
-        stats: { aderencia: "PENDENTE", avarias: 0, emCautela: 0, reserva: 0 },
-        logs: [] 
-      });
+    return NextResponse.json(relatorios, { 
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      }
+    });
+  } catch (error) {
+    return NextResponse.json({ error: "Erro ao buscar dados" }, { status: 500 });
+  }
+}
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const { pdfBase64, fileName, data, hora, hash, responsavel, itens } = body;
+
+    if (!pdfBase64 || !hash) {
+      return NextResponse.json({ error: "Dados incompletos." }, { status: 400 });
     }
 
-    const ultimoRelatorio = relatoriosDoDia[0];
-    const dataRelatorio = new Date(ultimoRelatorio.createdAt);
-    const horaRel = dataRelatorio.getHours();
-    
-    let isPendente = true;
-    if (turnoAlvo === "DIURNO" && (horaRel >= 6 && horaRel < 18)) isPendente = false;
-    if (turnoAlvo === "NOTURNO" && (horaRel >= 18 || horaRel < 6)) isPendente = false;
+    const base64Content = pdfBase64.split("base64,")[1];
+    const buffer = Buffer.from(base64Content, "base64");
 
-   
-    const termosEstoque = ['OK', 'DISPONIVEL', 'DISPONÍVEL', 'RESERVA', 'ESTOQUE', 'CARGA', '---', 'FURRIELAÇÃO', 'NO ARMARIO', 'PRONTO'];
-    const termosDanos = ['DANIFICADA', 'DANIFICADO', 'QUEBRADO', 'DEFEITO', 'ESTRAGADO', 'INOPERANTE', 'DANO'];
-    const termosManutencao = ['MANUTENCAO', 'MANUTENÇÃO', 'REVISAO', 'REVISÃO', 'OFICINA', 'ARMARIA'];
-    const termosExtravio = ['EXTRAVIO', 'EXTRAVIADA', 'EXTRAVIADO', 'PERDIDO', 'SUMIDO', 'NÃO LOCALIZADO', 'FALTA', 'ROUBADO', 'ROUBADA', 'FURTADO'];
+    let blob;
+    try {
+      blob = await put(`relatorios/${hash}.pdf`, buffer, {
+        access: 'public',
+        contentType: 'application/pdf',
+        addRandomSuffix: true,
+      });
+    } catch (blobError) {
+      throw new Error("Falha ao salvar arquivo no Storage.");
+    }
 
-    let avariasCount = 0;
-    let cautelasCount = 0;
-    let reservaCount = 0;
-    let historico = [];
-
-  
-    const itens = Array.isArray(ultimoRelatorio.itens) 
-      ? ultimoRelatorio.itens 
-      : JSON.parse(ultimoRelatorio.itens || "[]");
-
-    itens.forEach(item => {
-      const obsRaw = (item.cautela || "").trim();
-      const obsUpper = obsRaw.toUpperCase();
-      const itemID = (item.serie || item.pmpr || item.desc || "S/ID").trim();
-
-      const ehEstoque = !obsRaw || termosEstoque.some(t => obsUpper.includes(t));
-      const ehDano = termosDanos.some(t => obsUpper.includes(t));
-      const ehManutencao = termosManutencao.some(t => obsUpper.includes(t));
-      const ehExtravio = termosExtravio.some(t => obsUpper.includes(t));
-      const ehTecnico = ehDano || ehManutencao || ehExtravio;
-
-      
-      if (ehEstoque) {
-        reservaCount++;
-      } else if (ehTecnico) {
-        avariasCount++;
-      } else {
-        cautelasCount++;
-      }
-
-   
-      if (!ehEstoque) {
-        let statusFinal = "CAUTELADO";
-        if (ehDano) statusFinal = "CRÍTICO";
-        if (ehManutencao) statusFinal = "MANUTENÇÃO";
-        if (ehExtravio) statusFinal = "EXTRAVIO";
-
-        historico.push({
-          id: itemID,
-          equipamento: item.desc || "Equipamento",
-          militar: obsRaw, 
-          livro: item.pagLivro || "---",
-          status: statusFinal,
-          hora: ultimoRelatorio.hora,
-          responsavel: ultimoRelatorio.responsavel
-        });
-      }
+    const novoRelatorio = await prisma.relatorio.create({
+      data: {
+        hash: hash,
+        responsavel: responsavel || "Militar não identificado",
+        data: data,
+        hora: hora,
+        pdfUrl: blob.url,
+        itens: itens || [], 
+      },
     });
 
-   
-    return NextResponse.json({
-      isPendente,
-      turnoAlvo,
-      ultimoChecklist: {
-        data: ultimoRelatorio.data,
-        hora: ultimoRelatorio.hora,
-        responsavel: ultimoRelatorio.responsavel
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, 
+      auth: {
+        user: process.env.EMAIL_USER, 
+        pass: process.env.EMAIL_PASS, 
       },
-      stats: {
-        aderencia: isPendente ? "PENDENTE" : "100%",
-        avarias: avariasCount,
-        emCautela: cautelasCount,
-        reserva: reservaCount,
-      },
-      logs: historico
+    });
+
+    try {
+      await transporter.sendMail({
+        from: `"Sistema de Carga 17º BPM" <${process.env.EMAIL_USER}>`,
+        to: "hildo.costa@pm.pr.gov.br", 
+        subject: `📦 Relatório de Carga - 17º BPM - ${data} - ID: ${hash}`,
+        html: `
+          <div style="font-family: sans-serif; color: #334155; max-width: 600px; border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px;">
+            <h2 style="color: #2563eb; margin-top: 0;">Relatório de Conferência Diária</h2>
+            <p><strong>👤 Responsável:</strong> ${responsavel}</p>
+            <p><strong>📅 Data:</strong> ${data} às ${hora}</p>
+            <p><strong>🔑 ID:</strong> <code>${hash}</code></p>
+            <br/>
+            <p><strong>Acesse o documento original:</strong> <a href="${blob.url}">Visualizar PDF</a></p>
+          </div>
+        `,
+        attachments: [{
+          filename: fileName || 'relatorio.pdf',
+          content: base64Content,
+          encoding: 'base64',
+        }],
+      });
+    } catch (emailError) {
+      
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      url: blob.url,
+      hash: novoRelatorio.hash 
+    }, { 
+      status: 201,
+      headers: { 'Access-Control-Allow-Origin': '*' }
     });
 
   } catch (error) {
-    console.error("Erro na API Dashboard Mobile:", error);
-    return NextResponse.json(
-      { error: "Erro ao processar dados do batalhão" }, 
-      { status: 500 }
-    );
-  } finally {
-    
-    await prisma.$disconnect();
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({}, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }
