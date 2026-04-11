@@ -40,12 +40,12 @@ export async function POST(request) {
         data: data,
         hora: hora,
         pdfUrl: blob.url,
-        // Se 'itens' vier vazio do front, salvamos um array vazio para não dar erro
+      
         itens: itens || [], 
       },
     });
 
-    // 5. CONFIGURAÇÃO DO GMAIL (Nodemailer)
+    
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
@@ -56,7 +56,7 @@ export async function POST(request) {
       },
     });
 
-    // 6. MONTAGEM E ENVIO DO E-MAIL
+   
     try {
       const mailOptions = {
         from: `"Sistema de Carga 17º BPM" <${process.env.EMAIL_USER}>`,
