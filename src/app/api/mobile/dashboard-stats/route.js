@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from "@prisma/client";
-
-
-const prisma = new PrismaClient();
+import { prisma } from "../../../lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +8,13 @@ export async function GET() {
     const agora = new Date();
     const horaAtual = agora.getHours();
     
+    // 1. Define o turno operacional alvo
     const turnoAlvo = (horaAtual >= 6 && horaAtual < 18) ? "DIURNO" : "NOTURNO";
 
     const inicioDia = new Date();
     inicioDia.setHours(0, 0, 0, 0);
 
-   
+    // 2. Buscar relatórios registrados hoje
     const relatoriosDoDia = await prisma.relatorio.findMany({
       where: { 
         createdAt: { gte: inicioDia } 
@@ -24,7 +22,7 @@ export async function GET() {
       orderBy: { createdAt: 'desc' }
     });
 
-    
+    // Caso não exista nenhum checklist hoje
     if (relatoriosDoDia.length === 0) {
       return NextResponse.json({ 
         isPendente: true, 
@@ -39,22 +37,21 @@ export async function GET() {
     const dataRelatorio = new Date(ultimoRelatorio.createdAt);
     const horaRel = dataRelatorio.getHours();
     
+    // 3. Lógica de pendência baseada no horário do último checklist
     let isPendente = true;
     if (turnoAlvo === "DIURNO" && (horaRel >= 6 && horaRel < 18)) isPendente = false;
     if (turnoAlvo === "NOTURNO" && (horaRel >= 18 || horaRel < 6)) isPendente = false;
 
-   
+    // --- DICIONÁRIOS DE FILTRO ---
     const termosEstoque = ['OK', 'DISPONIVEL', 'DISPONÍVEL', 'RESERVA', 'ESTOQUE', 'CARGA', '---', 'FURRIELAÇÃO', 'NO ARMARIO', 'PRONTO'];
     const termosDanos = ['DANIFICADA', 'DANIFICADO', 'QUEBRADO', 'DEFEITO', 'ESTRAGADO', 'INOPERANTE', 'DANO'];
     const termosManutencao = ['MANUTENCAO', 'MANUTENÇÃO', 'REVISAO', 'REVISÃO', 'OFICINA', 'ARMARIA'];
     const termosExtravio = ['EXTRAVIO', 'EXTRAVIADA', 'EXTRAVIADO', 'PERDIDO', 'SUMIDO', 'NÃO LOCALIZADO', 'FALTA', 'ROUBADO', 'ROUBADA', 'FURTADO'];
 
-    let avariasCount = 0;
-    let cautelasCount = 0;
-    let reservaCount = 0;
+    let avariasCount = 0, cautelasCount = 0, reservaCount = 0;
     let historico = [];
 
-  
+    // 4. Processar itens do último checklist para os Cards do Mobile
     const itens = Array.isArray(ultimoRelatorio.itens) 
       ? ultimoRelatorio.itens 
       : JSON.parse(ultimoRelatorio.itens || "[]");
@@ -70,16 +67,12 @@ export async function GET() {
       const ehExtravio = termosExtravio.some(t => obsUpper.includes(t));
       const ehTecnico = ehDano || ehManutencao || ehExtravio;
 
-      
-      if (ehEstoque) {
-        reservaCount++;
-      } else if (ehTecnico) {
-        avariasCount++;
-      } else {
-        cautelasCount++;
-      }
+      // Contagem para os Cards do Mobile
+      if (ehEstoque) reservaCount++;
+      else if (ehTecnico) avariasCount++;
+      else cautelasCount++;
 
-   
+      // Se tiver alteração (não for estoque), manda para o Log
       if (!ehEstoque) {
         let statusFinal = "CAUTELADO";
         if (ehDano) statusFinal = "CRÍTICO";
@@ -98,7 +91,7 @@ export async function GET() {
       }
     });
 
-   
+    // 5. Retorno formatado para o Dashboard Mobile
     return NextResponse.json({
       isPendente,
       turnoAlvo,
@@ -117,13 +110,10 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error("Erro na API Dashboard Mobile:", error);
+    console.error("Erro Dashboard Mobile:", error);
     return NextResponse.json(
-      { error: "Erro ao processar dados do batalhão" }, 
+      { error: "Erro interno no servidor" }, 
       { status: 500 }
     );
-  } finally {
-    
-    await prisma.$disconnect();
   }
 }

@@ -7,15 +7,14 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
   try {
-    // 1. EXTRAÇÃO DOS DADOS (Adicionado 'itens' que estava faltando)
+   
     const { pdfBase64, fileName, data, hora, hash, responsavel, itens } = await request.json();
 
-    // 2. VALIDAÇÃO DE SEGURANÇA
     if (!pdfBase64 || !hash) {
       return NextResponse.json({ error: "Dados incompletos para processamento." }, { status: 400 });
     }
 
-    // 3. UPLOAD PARA VERCEL BLOB
+    
     const base64Content = pdfBase64.split("base64,")[1];
     const buffer = Buffer.from(base64Content, "base64");
 
@@ -31,8 +30,7 @@ export async function POST(request) {
       throw new Error("Falha ao salvar arquivo no Storage.");
     }
 
-    // 4. SALVAR NO BANCO DE DADOS (NEON/PRISMA)
-    // CORREÇÃO: Agora passamos o campo 'itens' para o banco de dados
+    
     const novoRelatorio = await prisma.relatorio.create({
       data: {
         hash: hash,

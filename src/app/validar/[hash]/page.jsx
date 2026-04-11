@@ -2,13 +2,11 @@ import { prisma } from "../../../lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
 import { 
-  ShieldCheck, 
   CheckCircle2, 
   XCircle, 
   User, 
   Calendar, 
   Clock, 
-  Building2,
   FileSearch
 } from "lucide-react";
 import Footer from "../../../components/Footer";
@@ -16,7 +14,7 @@ import Footer from "../../../components/Footer";
 export default async function ValidarPage({ params }) {
   const { hash } = await params;
 
-  // Busca o registro no banco de dados pelo Hash
+  
   const relatorio = await prisma.relatorio.findUnique({
     where: { hash: hash },
   });
@@ -27,7 +25,7 @@ export default async function ValidarPage({ params }) {
       <div className="flex-1 flex items-start justify-center w-full p-4 pt-20 overflow-y-auto no-scrollbar">
         <div className="relative w-full max-w-sm">
           
-          {/* Cabeçalho Flutuante idêntico ao Login */}
+        
           <header className="card-header-floating">
             <Image 
               src="/assets/image/bg-profile.png" 
@@ -43,7 +41,7 @@ export default async function ValidarPage({ params }) {
             
             {relatorio ? (
               <div className="space-y-6">
-                {/* Status Sucesso */}
+             
                 <div className="text-center mb-6">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 rounded-full mb-3 border border-emerald-100">
                     <CheckCircle2 className="text-emerald-500" size={32} />
@@ -52,7 +50,7 @@ export default async function ValidarPage({ params }) {
                   <p className="text-xs text-slate-500">Documento autenticado no sistema</p>
                 </div>
 
-                {/* Grid de Informações Estilo Formulário */}
+                
                 <div className="space-y-4">
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <div className="flex items-center gap-3 mb-1">
@@ -99,7 +97,7 @@ export default async function ValidarPage({ params }) {
                 </div>
               </div>
             ) : (
-              /* Status Erro */
+              
               <div className="py-6 text-center space-y-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-red-50 rounded-full border border-red-100">
                   <XCircle className="text-red-500" size={32} />
