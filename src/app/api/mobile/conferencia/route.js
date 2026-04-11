@@ -3,11 +3,39 @@ import nodemailer from 'nodemailer';
 import { put } from "@vercel/blob";
 import { PrismaClient } from "@prisma/client";
 
-// Instância do Prisma fora da função para evitar o erro "prisma is not defined"
 const prisma = new PrismaClient();
 
 export const dynamic = 'force-dynamic';
 
+// --- MÉTODO GET: Para listar os relatórios no Mobile ---
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const dataFiltro = searchParams.get('data');
+
+    console.log("[API] Buscando relatórios no banco...");
+
+    const relatorios = await prisma.relatorio.findMany({
+      where: dataFiltro ? { data: dataFiltro } : {},
+      orderBy: { createdAt: 'desc' },
+    });
+
+    console.log(`[API] ${relatorios.length} registros encontrados.`);
+
+    return NextResponse.json(relatorios, { 
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      }
+    });
+  } catch (error) {
+    console.error("❌ Erro no GET:", error);
+    return NextResponse.json({ error: "Erro ao buscar dados" }, { status: 500 });
+  }
+}
+
+// --- MÉTODO POST: Para salvar novas conferências ---
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -50,7 +78,7 @@ export async function POST(request) {
       },
     });
 
-    // 4. CONFIGURAÇÃO DO NODEMAILER (GMAIL)
+    // 4. CONFIGURAÇÃO DO NODEMAILER
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
@@ -63,7 +91,7 @@ export async function POST(request) {
 
     // 5. ENVIO DO E-MAIL
     try {
-      console.log("📧 Enviando e-mail para hildo.costa@pm.pr.gov.br...");
+      console.log("📧 Enviando e-mail...");
       await transporter.sendMail({
         from: `"Sistema de Carga 17º BPM" <${process.env.EMAIL_USER}>`,
         to: "hildo.costa@pm.pr.gov.br", 
@@ -84,19 +112,33 @@ export async function POST(request) {
           encoding: 'base64',
         }],
       });
-      console.log("✅ E-mail enviado com sucesso!");
+      console.log("✅ E-mail enviado!");
     } catch (emailError) {
-      console.error("⚠️ Falha no e-mail (mas os dados foram salvos no banco):", emailError);
+      console.error("⚠️ Falha no e-mail:", emailError);
     }
 
     return NextResponse.json({ 
       success: true, 
       url: blob.url,
       hash: novoRelatorio.hash 
-    }, { status: 201 });
+    }, { 
+      status: 201,
+      headers: { 'Access-Control-Allow-Origin': '*' }
+    });
 
   } catch (error) {
     console.error("❌ Erro Crítico na Rota:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+}
+
+// --- MÉTODO OPTIONS: Para suporte a CORS (Pré-vôo do navegador/mobile) ---
+export async function OPTIONS() {
+  return NextResponse.json({}, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }
