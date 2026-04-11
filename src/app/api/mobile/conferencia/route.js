@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { put } from "@vercel/blob";
-import { prisma } from "../../../lib/prisma"; // Verifique se o caminho do prisma está correto
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
