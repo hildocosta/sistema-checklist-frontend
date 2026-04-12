@@ -3,7 +3,7 @@ import { prisma } from "../../../../../lib/prisma";
 
 export async function PUT(request, { params }) {
   try {
-    // CORREÇÃO: await no params para garantir que o ID seja lido
+    
     const { id } = await params; 
     const body = await request.json();
 
