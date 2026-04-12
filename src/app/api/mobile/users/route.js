@@ -15,11 +15,17 @@ export async function GET() {
         email: true,
         nivel: true,
         image: true,
-        // Adicione outros campos se necessário
       }
     });
+
     return NextResponse.json(users);
   } catch (error) {
-    return NextResponse.json({ error: "Erro ao buscar usuários" }, { status: 500 });
+    
+    console.error("Erro na API de usuários:", error);
+
+    return NextResponse.json(
+      { error: "Erro ao buscar usuários" }, 
+      { status: 500 }
+    );
   }
 }

@@ -22,8 +22,6 @@ model User {
   unidade   String?  @default("17º BPM")
   setor     String?
   telefone  String?
-  
-  // Campo para Foto 
   image     String?  
 
   // Controle de Acesso
@@ -55,6 +53,6 @@ model Relatorio {
   data        String            
   hora        String   
   itens       Json
-  pdfUrl      String?        
+  pdfUrl      String?  
   createdAt   DateTime @default(now())
 }
