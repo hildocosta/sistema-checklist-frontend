@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../../../lib/prisma";
+import { prisma } from "../../../../lib/prisma"; // Importação corrigida
 import nodemailer from "nodemailer";
 
 export async function POST(request) {
   try {
     const { email } = await request.json();
 
-    
+    // 1. Validação de entrada
     if (!email) {
       return NextResponse.json(
         { error: "O E-MAIL É OBRIGATÓRIO." },
@@ -16,7 +16,7 @@ export async function POST(request) {
 
     const emailLower = email.toLowerCase().trim();
 
-
+    // 2. Busca o usuário no banco de dados
     const user = await prisma.user.findUnique({
       where: { email: emailLower },
     });
@@ -28,7 +28,7 @@ export async function POST(request) {
       );
     }
 
-    
+    // 3. Configuração do transportador de e-mail (Gmail)
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -39,10 +39,10 @@ export async function POST(request) {
       },
     });
 
-  
+    // 4. Link de redefinição
     const resetLink = `${process.env.NEXTAUTH_URL}/reset-password?token=${user.id}`;
 
-    
+    // 5. Envio do e-mail
     await transporter.sendMail({
       from: `"Suporte 17º BPM" <${process.env.EMAIL_USER}>`,
       to: emailLower,
