@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+export const dynamic = 'force-dynamic'; // Garante que a listagem sempre venha do banco, sem cache antigo
 
 export async function GET() {
   try {
@@ -20,11 +20,10 @@ export async function GET() {
 
     return NextResponse.json(users);
   } catch (error) {
-    
     console.error("Erro na API de usuários:", error);
 
     return NextResponse.json(
-      { error: "Erro ao buscar usuários" }, 
+      { error: "Erro ao buscar usuários", details: error.message }, 
       { status: 500 }
     );
   }

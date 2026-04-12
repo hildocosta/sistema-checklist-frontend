@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * ATUALIZAR MILITAR
+ */
 export async function PUT(request, { params }) {
   try {
     const { id } = params;
     const body = await request.json();
 
+    // 1. Verifica se o militar existe
     const userExists = await prisma.user.findUnique({
       where: { id: id },
     });
@@ -17,12 +21,16 @@ export async function PUT(request, { params }) {
       );
     }
 
+    // 2. Executa a atualização
     const updatedUser = await prisma.user.update({
       where: { id: id },
       data: {
         name: body.name,
         posto: body.posto,
         nivel: body.nivel,
+        // Caso queira permitir atualizar outros campos futuramente:
+        // re: body.re,
+        // status: body.status,
       },
     });
 
@@ -35,10 +43,14 @@ export async function PUT(request, { params }) {
   }
 }
 
+/**
+ * EXCLUIR MILITAR
+ */
 export async function DELETE(request, { params }) {
   try {
     const { id } = params;
 
+    // 1. Verifica se o militar existe
     const userExists = await prisma.user.findUnique({
       where: { id: id },
     });
@@ -50,6 +62,7 @@ export async function DELETE(request, { params }) {
       );
     }
 
+    // 2. Deleta o registro
     await prisma.user.delete({
       where: { id: id },
     });
