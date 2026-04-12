@@ -7,25 +7,41 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const agora = new Date();
-    const horaAtual = agora.getHours();
+    // 1. AJUSTE DE FUSO HORÁRIO (Brasília UTC-3)
+    // Servidores (Vercel/Railway) usam UTC. Se são 12:27 no PR, o servidor vê 15:27.
+    const agoraUTC = new Date();
+    const agoraBrasil = new Date(agoraUTC.getTime() - (3 * 60 * 60 * 1000));
+    const horaBrasil = agoraBrasil.getUTCHours();
     
-    // 1. Define qual turno o sistema ESPERA no momento atual
-    const turnoEsperadoAgora = (horaAtual >= 6 && horaAtual < 18) ? "DIURNO" : "NOTURNO";
+    // 2. DEFINE O TURNO ATUAL (Diurno: 06h às 17h59 | Noturno: 18h às 05h59)
+    const turnoEsperadoAgora = (horaBrasil >= 6 && horaBrasil < 18) ? "DIURNO" : "NOTURNO";
 
-    const inicioDia = new Date();
-    inicioDia.setHours(0, 0, 0, 0);
+    // 3. BUSCA RELATÓRIOS DAS ÚLTIMAS 24 HORAS
+    // Usamos 24h para garantir que o turno da madrugada (que vira o dia) seja localizado.
+    const umDiaAtras = new Date(agoraUTC.getTime() - (24 * 60 * 60 * 1000));
 
-    // 2. Busca os relatórios de hoje
-    const relatoriosDoDia = await prisma.relatorio.findMany({
+    const relatoriosRecentes = await prisma.relatorio.findMany({
       where: { 
-        createdAt: { gte: inicioDia } 
+        createdAt: { gte: umDiaAtras } 
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    // Se não houver nenhum registro hoje, está pendente
-    if (relatoriosDoDia.length === 0) {
+    // 4. VERIFICA SE EXISTE RELATÓRIO NO TURNO ATUAL
+    // Varremos os relatórios recentes para ver se algum deles pertence ao turno vigente.
+    const relatorioDesteTurno = relatoriosRecentes.find(rel => {
+      const dataRel = new Date(new Date(rel.createdAt).getTime() - (3 * 60 * 60 * 1000));
+      const h = dataRel.getUTCHours();
+      const turnoDesteRelatorio = (h >= 6 && h < 18) ? "DIURNO" : "NOTURNO";
+      
+      return turnoDesteRelatorio === turnoEsperadoAgora;
+    });
+
+    // Se achou um relatório do turno atual, isPendente é FALSE.
+    const isPendente = !relatorioDesteTurno;
+
+    // Se não houver nenhum relatório nas últimas 24h, retorna vazio mas pendente
+    if (relatoriosRecentes.length === 0) {
       return NextResponse.json({ 
         isPendente: true, 
         turnoAlvo: turnoEsperadoAgora,
@@ -35,17 +51,8 @@ export async function GET() {
       });
     }
 
-    const ultimoRelatorio = relatoriosDoDia[0];
-    const dataRelatorio = new Date(ultimoRelatorio.createdAt);
-    const horaRel = dataRelatorio.getHours();
-    
-    // 3. Identifica a qual turno pertence o ÚLTIMO relatório enviado
-    const turnoDoRelatorio = (horaRel >= 6 && horaRel < 18) ? "DIURNO" : "NOTURNO";
-    
-    // LÓGICA DE PENDÊNCIA: 
-    // Se o turno que o sistema espera agora é diferente do turno do último relatório enviado, está pendente.
-    // Ex: Agora é 18:33 (NOTURNO) e o último foi 17:51 (DIURNO). NOTURNO !== DIURNO = PENDENTE.
-    const isPendente = turnoEsperadoAgora !== turnoDoRelatorio;
+    // Usamos o relatório mais recente para compor as estatísticas da tela
+    const ultimoRelatorio = relatoriosRecentes[0];
 
     // --- DICIONÁRIOS DE FILTRO ---
     const termosEstoque = ['OK', 'DISPONIVEL', 'DISPONÍVEL', 'RESERVA', 'ESTOQUE', 'CARGA', '---', 'FURRIELAÇÃO', 'NO ARMARIO', 'PRONTO'];
@@ -71,11 +78,10 @@ export async function GET() {
       const ehDano = termosDanos.some(t => obsUpper.includes(t));
       const ehManutencao = termosManutencao.some(t => obsUpper.includes(t));
       const ehExtravio = termosExtravio.some(t => obsUpper.includes(t));
-      const ehTecnico = ehDano || ehManutencao || ehExtravio;
 
       if (ehEstoque) {
         reservaCount++;
-      } else if (ehTecnico) {
+      } else if (ehDano || ehManutencao || ehExtravio) {
         avariasCount++;
       } else {
         cautelasCount++;
@@ -101,7 +107,7 @@ export async function GET() {
 
     return NextResponse.json({
       isPendente,
-      turnoAlvo: isPendente ? turnoEsperadoAgora : turnoDoRelatorio,
+      turnoAlvo: turnoEsperadoAgora,
       ultimoChecklist: {
         data: ultimoRelatorio.data,
         hora: ultimoRelatorio.hora,
