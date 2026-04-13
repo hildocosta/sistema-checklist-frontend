@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../../lib/prisma";
 
-const prisma = new PrismaClient();
+export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -12,8 +12,27 @@ export async function GET(request) {
       where: dataFiltro ? { data: dataFiltro } : {},
       orderBy: { createdAt: 'desc' },
     });
-    return NextResponse.json(relatorios);
+
+    
+    const relatoriosFormatados = relatorios.map(rel => {
+    
+      const dataRel = new Date(rel.createdAt);
+      const dataRelBR = new Date(dataRel.getTime() - (3 * 60 * 60 * 1000));
+      const hora = dataRelBR.getUTCHours();
+
+      
+      const iconeTurno = (hora >= 6 && hora < 18) ? "sol" : "lua";
+
+      return {
+        ...rel,
+        turnoIcone: iconeTurno 
+      };
+    });
+
+    return NextResponse.json(relatoriosFormatados);
+
   } catch (error) {
+    console.error("Erro ao buscar relatórios:", error);
     return NextResponse.json({ error: "Erro ao buscar dados" }, { status: 500 });
   }
 }
