@@ -5,19 +5,30 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const agora = new Date();
-    const horaAtual = agora.getHours();
+    // 1. AJUSTE DE FUSO HORÁRIO (Brasília UTC-3)
+    const agoraUTC = new Date();
+    const agoraBR = new Date(agoraUTC.getTime() - (3 * 60 * 60 * 1000));
+    
+    const horaAtual = agoraBR.getUTCHours();
+    const diaAtualStr = agoraBR.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Definição do Turno Alvo com base na hora atual de Brasília
+    // Diurno: 06:00 às 17:59 | Noturno: 18:00 às 05:59
     const turnoAlvo = (horaAtual >= 6 && horaAtual < 18) ? "DIURNO" : "NOTURNO";
 
-    const inicioDia = new Date();
-    inicioDia.setHours(0, 0, 0, 0);
+    // Início do dia para busca no banco (00:00:00 UTC)
+    const inicioDia = new Date(agoraBR);
+    inicioDia.setUTCHours(0, 0, 0, 0);
 
-    // 1. Buscar relatórios do dia
+    // 2. BUSCAR RELATÓRIOS DO DIA
     const relatoriosDoDia = await prisma.relatorio.findMany({
-      where: { createdAt: { gte: inicioDia } },
+      where: { 
+        createdAt: { gte: inicioDia } 
+      },
       orderBy: { createdAt: 'desc' }
     });
 
+    // Se não houver nenhum relatório no dia
     if (relatoriosDoDia.length === 0) {
       return NextResponse.json({ 
         isPendente: true, 
@@ -30,15 +41,29 @@ export async function GET() {
     }
 
     const ultimoRelatorio = relatoriosDoDia[0];
-    const dataRelatorio = new Date(ultimoRelatorio.createdAt);
-    const horaRel = dataRelatorio.getHours();
     
-    // Lógica de pendência
+    // 3. LÓGICA DE PENDÊNCIA REFINADA
+    // Convertemos a hora do relatório para o fuso BR para comparar
     let isPendente = true;
-    if (turnoAlvo === "DIURNO" && (horaRel >= 6 && horaRel < 18)) isPendente = false;
-    if (turnoAlvo === "NOTURNO" && (horaRel >= 18 || horaRel < 6)) isPendente = false;
 
-    // --- DICIONÁRIOS DE STATUS ---
+    const relatoriosComTurno = relatoriosDoDia.map(rel => {
+      const dataRel = new Date(rel.createdAt);
+      const dataRelBR = new Date(dataRel.getTime() - (3 * 60 * 60 * 1000));
+      const horaRelBR = dataRelBR.getUTCHours();
+      
+      // Atribui a qual turno esse relatório pertence
+      const turnoDoRelatorio = (horaRelBR >= 6 && horaRelBR < 18) ? "DIURNO" : "NOTURNO";
+      return { ...rel, turnoDoRelatorio };
+    });
+
+    // Verifica se existe algum relatório feito DENTRO do turno alvo atual
+    const jaFeitoNoTurno = relatoriosComTurno.some(rel => rel.turnoDoRelatorio === turnoAlvo);
+    
+    if (jaFeitoNoTurno) {
+      isPendente = false;
+    }
+
+    // --- DICIONÁRIOS DE STATUS (Mantidos) ---
     const termosEstoque = ['OK', 'DISPONIVEL', 'DISPONÍVEL', 'RESERVA', 'ESTOQUE', 'CARGA', '---', 'FURRIELAÇÃO', 'NO ARMARIO', 'PRONTO'];
     const termosDanos = ['DANIFICADA', 'DANIFICADO', 'QUEBRADO', 'DEFEITO', 'ESTRAGADO', 'INOPERANTE', 'DANO'];
     const termosManutencao = ['MANUTENCAO', 'MANUTENÇÃO', 'REVISAO', 'REVISÃO', 'OFICINA', 'ARMARIA'];
@@ -48,7 +73,7 @@ export async function GET() {
     let historico = [];
     const itensProcessadosNoLog = new Set();
 
-    // 2. PROCESSAMENTO PRIORITÁRIO: Itens do último checklist (Cards e Log Principal)
+    // 4. PROCESSAMENTO DOS ITENS (Sempre baseado no último relatório enviado)
     const itensUltimo = Array.isArray(ultimoRelatorio.itens) 
       ? ultimoRelatorio.itens 
       : JSON.parse(ultimoRelatorio.itens || "[]");
@@ -64,15 +89,12 @@ export async function GET() {
       const ehExtravio = termosExtravio.some(t => obsUpper.includes(t));
       const ehTecnico = ehDano || ehManutencao || ehExtravio;
 
-      // Contagem para os Cards
       if (ehEstoque) reservaCount++;
       else if (ehTecnico) avariasCount++;
       else cautelasCount++;
 
-      // Adicionar ao Log se não for estoque
       if (!ehEstoque) {
         itensProcessadosNoLog.add(itemID);
-        
         let statusFinal = "CAUTELADO";
         if (ehDano) statusFinal = "CRÍTICO";
         if (ehManutencao) statusFinal = "MANUTENÇÃO";
@@ -90,38 +112,6 @@ export async function GET() {
       }
     });
 
-    // 3. COMPLEMENTO: Buscar movimentações de outros checklists do mesmo dia
-    // (Caso algum item tenha sido cautelado de manhã e não apareça no checklist de agora)
-    relatoriosDoDia.slice(1).forEach(rel => {
-      const itensArray = Array.isArray(rel.itens) ? rel.itens : JSON.parse(rel.itens || "[]");
-      
-      itensArray.forEach(item => {
-        const obsRaw = (item.cautela || "").trim();
-        const itemID = (item.serie || item.pmpr || item.desc || "SEM-ID").trim();
-        const obsUpper = obsRaw.toUpperCase();
-        const ehEstoque = !obsRaw || termosEstoque.some(t => obsUpper.includes(t));
-
-        if (!ehEstoque && !itensProcessadosNoLog.has(itemID)) {
-          itensProcessadosNoLog.add(itemID);
-          
-          let statusFinal = "CAUTELADO";
-          if (termosDanos.some(t => obsUpper.includes(t))) statusFinal = "CRÍTICO";
-          if (termosManutencao.some(t => obsUpper.includes(t))) statusFinal = "MANUTENÇÃO";
-          if (termosExtravio.some(t => obsUpper.includes(t))) statusFinal = "EXTRAVIO";
-
-          historico.push({
-            id: itemID,
-            equipamento: item.desc || "Equipamento",
-            militar: obsRaw, 
-            livro: item.pagLivro || "---",
-            status: statusFinal,
-            hora: rel.hora,
-            responsavel: rel.responsavel
-          });
-        }
-      });
-    });
-
     return NextResponse.json({
       isPendente,
       turnoAlvo,
@@ -131,7 +121,7 @@ export async function GET() {
         responsavel: ultimoRelatorio.responsavel
       },
       stats: {
-        aderencia: isPendente ? "PENDENTE" : "100%",
+        aderencia: isPendente ? "PENDENTE" : "REALIZADO",
         avarias: avariasCount,
         emCautela: cautelasCount,
         reserva: reservaCount,
