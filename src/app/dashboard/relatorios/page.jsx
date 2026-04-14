@@ -18,7 +18,7 @@ export default function RelatoriosPage() {
   const [relatorioSelecionado, setRelatorioSelecionado] = useState(null);
   const [filtroData, setFiltroData] = useState("");
 
-  // Busca de relatórios na API
+  
   const fetchRelatorios = async (data = "") => {
     setIsLoading(true);
     try {
@@ -32,7 +32,7 @@ export default function RelatoriosPage() {
         else setRelatorioSelecionado(null);
       }
     } catch {
-      // Variável 'error' removida para evitar erro de 'defined but never used'
+      
       toast.error("Erro ao conectar com o banco de dados.");
     } finally {
       setIsLoading(false);
@@ -86,7 +86,7 @@ export default function RelatoriosPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1 overflow-hidden min-h-0">
         
-        {/* Sidebar de Seleção */}
+ 
         <div className="lg:col-span-4 flex flex-col gap-6 overflow-hidden min-h-0">
           <div className="bg-white p-4 rounded-[2.5rem] border border-slate-200/60 shadow-sm flex flex-col h-full overflow-hidden">
             
@@ -155,7 +155,7 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
-        {/* Visualizador do PDF */}
+        
         <div className="lg:col-span-8 flex flex-col h-full overflow-hidden">
           {relatorioSelecionado ? (
             <div className="flex flex-col h-full bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">

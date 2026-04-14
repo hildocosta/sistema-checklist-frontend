@@ -5,8 +5,7 @@ import {
   ClipboardCheck, Printer, Save, 
   Search, BookOpen, AlertTriangle,
   RotateCcw, CheckCircle2, ShieldCheck,
-  Zap, Package, Radio, CarFront, Box, PlugZap,
-  Activity, Flashlight, Layers, Smartphone,
+  Zap, Package, Radio, CarFront,PlugZap, Layers, Smartphone,
   ChevronUp 
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -15,10 +14,10 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode"; 
 
-// --- IMPORTAÇÃO DOS DADOS ---
+
 import { INVENTARIO_COMPLETO, EFETIVO_17BPM } from "../../../data/inventario/index";
 
-// Componentes de interface
+
 import Breadcrumb from "../../../components/Breadcrumb";
 import ActionButton from "../../../components/ActionButton";
 import SecondaryButton from "../../../components/SecondaryButton";
@@ -31,12 +30,12 @@ export default function ChecklistPage() {
   const [abaAtiva, setAbaAtiva] = useState("armamento");
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-  // --- LÓGICA DA BARRA DE PROGRESSO ---
+ 
   const totalItens = items.length;
   const itensConcluidos = items.filter(i => i.status === "ok").length;
   const porcentagemProgresso = totalItens > 0 ? Math.round((itensConcluidos / totalItens) * 100) : 0;
 
-  // --- DADOS DO RESPONSÁVEL VIA SESSION ---
+  
   const responsavelFormatado = session?.user?.name 
     ? `${session.user.posto || "Sd. QP PM"} ${session.user.name} - RG ${session.user.re || "000.000-0"}`
     : "1º SGT ANDERSON SILVA - RE 123.456-7";
@@ -181,7 +180,7 @@ export default function ChecklistPage() {
           item.pmpr || "---",
           item.cautela || "DISPONÍVEL",
           item.pagLivro || "---",
-          "OK" // <<--- AJUSTADO: Agora exibe OK em vez de ---
+          "OK" 
         ]);
 
         autoTable(doc, {
@@ -253,7 +252,6 @@ export default function ChecklistPage() {
     }
   };
 
-  // ... (restante do componente permanece igual)
   return (
     <div className="animate-in fade-in duration-700 space-y-6 max-w-full mx-auto p-4 flex flex-col relative">
       <Toaster richColors position="top-right" closeButton />
@@ -263,7 +261,7 @@ export default function ChecklistPage() {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
       
-      {/* 1. CABEÇALHO E AÇÕES */}
+      
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 shrink-0">
         <div>
           <Breadcrumb itemAtual="Checklist Diário" />
@@ -275,7 +273,7 @@ export default function ChecklistPage() {
         </div>
       </div>
 
-      {/* 2. BARRA DE PROGRESSO */}
+      
       <div className="bg-white px-4 py-3 rounded-xl border border-slate-100 shadow-sm">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 shrink-0">
@@ -296,7 +294,7 @@ export default function ChecklistPage() {
         </div>
       </div>
 
-      {/* 3. BARRA DE NAVEGAÇÃO (TABS) */}
+    
       <div className="bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200 w-full overflow-hidden">
         <div className="flex flex-row gap-1 w-full overflow-x-auto no-scrollbar">
           {categorias.map((categoria) => {
@@ -332,7 +330,7 @@ export default function ChecklistPage() {
         </div>
       </div>
 
-      {/* Botão Back to Top */}
+     
       <button
         onClick={scrollToTop}
         className={`fixed bottom-6 right-4 z-[100] p-2 rounded-lg bg-blue-600/80 text-white shadow-lg backdrop-blur-sm transition-all duration-300 hover:bg-blue-600 active:scale-90 border border-white/20 ${
@@ -343,14 +341,15 @@ export default function ChecklistPage() {
         <ChevronUp size={18} strokeWidth={3} />
       </button>
 
-      {/* 4. CONTEÚDO / TABELA */}
+   
       <div className="border border-slate-100 bg-white shadow-sm overflow-x-auto rounded-2xl min-h-[450px]">
         {isLoading ? (
           <div className="bg-white p-6 space-y-4 rounded-2xl">
             {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
           </div>
         ) : (
-          <table className="w-full border-collapse table-fixed min-w-[900px]">
+         <table  className="w-full border-collapse table-fixed"  style={{ minWidth: '900px' }}
+>
             <thead>
               <tr className="border-b border-slate-50 bg-slate-50/90 backdrop-blur-sm">
                 <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[5%] text-left">Ord</th>
@@ -376,7 +375,7 @@ export default function ChecklistPage() {
         )}
       </div>
 
-      {/* 5. RODAPÉ DE FINALIZAÇÃO */}
+     
       <div className="bg-white p-5 rounded-3xl border border-slate-100 flex flex-col md:flex-row justify-between items-center shadow-sm gap-6 shrink-0">
         <div className="flex gap-4 items-center">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors border ${isConferenciaCompleta ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-blue-50 text-blue-500 border-blue-100'}`}>
@@ -401,7 +400,6 @@ export default function ChecklistPage() {
   );
 }
 
-// ... (Subcomponente RowChecklist também permanece igual)
 function RowChecklist({ item, onToggle, onUpdate }) {
   const [searchTerm, setSearchTerm] = useState(item.cautela || "");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -458,7 +456,10 @@ function RowChecklist({ item, onToggle, onUpdate }) {
               ${searchTerm ? 'bg-white border-blue-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400 italic'}`}
           />
           {showDropdown && filteredEfetivo.length > 0 && (
-            <div className="absolute z-[100] w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+            <div 
+  className="absolute w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden"
+  style={{ zIndex: 100 }}
+>
               {filteredEfetivo.map(m => (
                 <button 
                   key={m.id} 
