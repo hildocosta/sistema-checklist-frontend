@@ -23,7 +23,6 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
     setError("");
 
-    // Validação de Segurança
     if (password.length < 6) {
       setError("A SENHA DEVE TER NO MÍNIMO 6 CARACTERES.");
       setIsLoading(false);
@@ -36,7 +35,6 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    // Simulação de alteração no banco de dados
     setTimeout(() => {
       setIsSuccess(true);
       setIsLoading(false);
@@ -44,10 +42,12 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <main className="h-screen w-full bg-login-image flex flex-col items-center justify-between font-sans overflow-hidden">
+    /* Ajuste de min-h-screen para preenchimento total em monitores de 23" */
+    <main className="min-h-screen w-full bg-login-image flex flex-col items-center justify-between font-sans overflow-hidden">
       
-      <div className="flex-1 flex items-start justify-center w-full p-4 pt-20">
-        <div className="relative w-full max-w-sm">
+      {/* Container flex-1 com items-center para centralização vertical real */}
+      <div className="flex-1 flex items-center justify-center w-full p-4">
+        <div className="relative w-full max-w-sm mb-12">
           
           <header className="card-header-floating">
             <Image 
@@ -60,13 +60,12 @@ export default function ResetPasswordPage() {
             />
           </header>
 
-          <div className="bg-white rounded-xl shadow-2xl p-8 pt-24 pb-10 transition-all duration-500 border border-slate-100">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 pt-20 pb-10 transition-all duration-500 border border-slate-100">
             {!isSuccess ? (
-              /* FORMULÁRIO DE NOVA SENHA */
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center mb-8">
                   <h2 className="text-xl font-bold text-slate-700 uppercase tracking-tight">Nova Senha</h2>
-                  <p className="text-xs text-slate-500 mt-2">
+                  <p className="text-xs text-slate-400 mt-2">
                     Crie uma combinação segura para o seu próximo acesso.
                   </p>
                 </div>
@@ -81,7 +80,6 @@ export default function ResetPasswordPage() {
                 )}
 
                 <form onSubmit={handleResetPassword} className="space-y-4">
-                  {/* CAMPO: NOVA SENHA */}
                   <Input 
                     label="NOVA SENHA" 
                     type={showPassword ? "text" : "password"} 
@@ -93,14 +91,13 @@ export default function ResetPasswordPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-blue-600 transition-colors"
+                      className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-blue-600 transition-all"
                       tabIndex="-1"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </Input>
 
-                  {/* CAMPO: CONFIRMAR NOVA SENHA */}
                   <Input 
                     label="CONFIRMAR NOVA SENHA" 
                     type={showConfirmPassword ? "text" : "password"} 
@@ -112,7 +109,7 @@ export default function ResetPasswordPage() {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-blue-600 transition-colors"
+                      className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-blue-600 transition-all"
                       tabIndex="-1"
                     >
                       {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -131,7 +128,6 @@ export default function ResetPasswordPage() {
                 </form>
               </div>
             ) : (
-              /* SUCESSO FINAL NA REDEFINIÇÃO */
               <div className="text-center animate-in fade-in zoom-in duration-500 py-2">
                 <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-blue-100">
                   <ShieldCheck size={32} />
@@ -141,7 +137,7 @@ export default function ResetPasswordPage() {
                   Senha Alterada!
                 </h2>
                 
-                <p className="text-xs text-slate-500 leading-relaxed mb-8 px-4">
+                <p className="text-xs text-slate-400 leading-relaxed mb-8 px-4">
                   Sua nova credencial foi registrada com sucesso. Você já pode acessar o sistema com segurança.
                 </p>
 
@@ -156,7 +152,7 @@ export default function ResetPasswordPage() {
         </div>
       </div>
 
-      <footer className="w-full">
+      <footer className="w-full shrink-0">
         <Footer />
       </footer>
     </main>

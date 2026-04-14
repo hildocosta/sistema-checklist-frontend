@@ -54,10 +54,12 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="h-screen w-full bg-login-image flex flex-col items-center justify-between font-sans overflow-hidden">
+    /* Ajuste para ocupar toda a tela e manter o footer na base */
+    <main className="min-h-screen w-full bg-login-image flex flex-col items-center justify-between font-sans overflow-hidden">
       
-      <div className="flex-1 flex items-start justify-center w-full p-4 pt-20">
-        <div className="relative w-full max-w-sm">
+      {/* Centralização Vertical e Horizontal para qualquer monitor */}
+      <div className="flex-1 flex items-center justify-center w-full p-4">
+        <div className="relative w-full max-w-sm mb-12">
           
           <header className="card-header-floating">
             <Image 
@@ -70,15 +72,15 @@ export default function RegisterPage() {
             />
           </header>
 
-          <div className="bg-white rounded-xl shadow-2xl p-8 pt-24 pb-10 border border-slate-100">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 pt-20 pb-10 border border-slate-100">
             <div className="text-center mb-8">
-              <h2 className="text-xl font-bold text-slate-700">Nova Conta</h2>
-              <p className="text-xs text-slate-500">Crie seu acesso administrativo abaixo</p>
+              <h2 className="text-xl font-bold text-slate-700 tracking-tight">Nova Conta</h2>
+              <p className="text-xs text-slate-400 mt-1">Crie seu acesso administrativo abaixo</p>
             </div>
             
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-6 animate-shake">
-                <p className="text-red-700 text-[10px] text-center font-bold uppercase tracking-wider">
+                <p className="text-red-700 text-[10px] text-center font-bold uppercase tracking-widest">
                   {error}
                 </p>
               </div>
@@ -103,7 +105,6 @@ export default function RegisterPage() {
                 required 
               />
               
-              {/* CAMPO SENHA - USANDO A COMPOSIÇÃO COM CHILDREN */}
               <Input 
                 label="SENHA" 
                 type={showPassword ? "text" : "password"} 
@@ -112,32 +113,32 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)} 
                 required 
               >
-                {/* O botão do olho agora é um 'child' do Input.jsx */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-blue-600 transition-colors"
+                  className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-blue-600 transition-all"
                   tabIndex="-1" 
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </Input>
               
-              <div className="pt-2">
+              <div className="pt-4">
                 <ActionButton 
                   label="CRIAR MINHA CONTA"
                   type="submit"
                   loading={isLoading}
                   loadingText="PROCESSANDO..."
                   fullWidth={true}
+                  className="h-12 shadow-lg shadow-blue-200"
                 />
               </div>
               
-              <div className="text-center text-sm text-slate-500 pt-6 border-t border-slate-50 mt-4">
+              <div className="text-center text-xs text-slate-500 pt-6 border-t border-slate-50 mt-6">
                 Já tem cadastro?{" "}
                 <Link 
                   href="/login" 
-                  className="text-blue-500 font-bold hover:underline decoration-2 transition-all"
+                  className="text-blue-600 font-bold hover:underline underline-offset-4 transition-all"
                 >
                   Voltar ao Login
                 </Link>
@@ -147,7 +148,7 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <footer className="w-full">
+      <footer className="w-full shrink-0">
         <Footer />
       </footer>
     </main>

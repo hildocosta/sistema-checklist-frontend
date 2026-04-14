@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
     setError("");
 
-    // Simulação de envio (Depois você pode integrar com um serviço de e-mail)
+    // Simulação de envio
     setTimeout(() => {
       if (email.includes("@")) {
         setIsSubmitted(true);
@@ -34,12 +34,12 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="h-screen w-full bg-login-image flex flex-col items-center justify-between font-sans overflow-hidden">
+    <main className="min-h-screen w-full bg-login-image flex flex-col items-center justify-between font-sans overflow-hidden">
       
-      <div className="flex-1 flex items-start justify-center w-full p-4 pt-20">
-        <div className="relative w-full max-w-sm">
+      {/* Container de Centralização para qualquer monitor */}
+      <div className="flex-1 flex items-center justify-center w-full p-4">
+        <div className="relative w-full max-w-sm mb-12">
           
-          {/* Header Flutuante com Logo */}
           <header className="card-header-floating">
             <Image 
               src="/assets/image/bg-profile.png" 
@@ -51,13 +51,13 @@ export default function ForgotPasswordPage() {
             />
           </header>
 
-          <div className="bg-white rounded-xl shadow-2xl p-8 pt-24 pb-10 transition-all duration-500 border border-slate-100">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 pt-20 pb-10 transition-all duration-500 border border-slate-100">
             {!isSubmitted ? (
               /* ESTADO 1: FORMULÁRIO */
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center mb-8">
                   <h2 className="text-xl font-bold text-slate-700 uppercase tracking-tight">Recuperar Acesso</h2>
-                  <p className="text-xs text-slate-500 mt-2">
+                  <p className="text-xs text-slate-400 mt-2">
                     Identifique-se para receber as instruções de redefinição de senha.
                   </p>
                 </div>
@@ -92,12 +92,11 @@ export default function ForgotPasswordPage() {
                   </div>
                 </form>
 
-                {/* AJUSTADO: Agora com text-sm e o mesmo estilo do Login/Register */}
                 <div className="text-center text-sm text-slate-500 pt-6 border-t border-slate-50 mt-8">
                   Lembrou a senha?{" "}
                   <Link 
                     href="/login" 
-                    className="text-blue-500 font-bold hover:underline decoration-2 transition-all"
+                    className="text-blue-600 font-bold hover:underline underline-offset-4 transition-all"
                   >
                     Voltar ao Login
                   </Link>
@@ -120,7 +119,7 @@ export default function ForgotPasswordPage() {
                     <strong className="text-slate-800 font-bold break-all">{email}</strong>
                   </p>
                   
-                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mx-1">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mx-1">
                     <p className="text-[10px] text-slate-500 italic uppercase font-bold mb-2 tracking-wider">
                       Não recebeu o e-mail?
                     </p>
@@ -149,7 +148,7 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
 
-      <footer className="w-full">
+      <footer className="w-full shrink-0">
         <Footer />
       </footer>
     </main>
