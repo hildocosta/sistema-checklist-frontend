@@ -6,9 +6,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
+import { z } from "zod"; // Importamos o Zod
 import Input from "../../components/Input";
 import ActionButton from "../../components/ActionButton"; 
 import Footer from "../../components/Footer";
+
+// NÍVEL 4: Definindo o molde de segurança (Schema)
+const loginSchema = z.object({
+  email: z.string()
+    .email("E-mail com formato inválido.")
+    .min(5, "E-mail muito curto."),
+  password: z.string()
+    .min(6, "A senha deve ter pelo menos 6 caracteres.")
+    .max(50, "Senha excessivamente longa.")
+});
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -23,7 +34,19 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
+    // 1. Validação do Zod (Detector de Metais)
+    const validation = loginSchema.safeParse({ email, password });
+
+    if (!validation.success) {
+      // Pega a primeira mensagem de erro definida no schema acima
+      const firstError = validation.error.issues[0].message;
+      setError(firstError.toUpperCase());
+      setIsLoading(false);
+      return; // Para o login aqui mesmo
+    }
+
     try {
+      // 2. Tentativa de Login (Só chega aqui se os dados estiverem "limpos")
       const result = await signIn("credentials", {
         email: email,
         password: password,
@@ -80,7 +103,7 @@ export default function LoginPage() {
                 placeholder="Digite seu e-mail..." 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
-                required 
+                // Retiramos o 'required' do HTML para deixar o Zod cuidar de tudo
               />
 
               <div className="space-y-2">
@@ -90,7 +113,6 @@ export default function LoginPage() {
                   placeholder="Digite sua senha..." 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
-                  required 
                 >
                   <button
                     type="button"

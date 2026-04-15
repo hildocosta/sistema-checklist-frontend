@@ -6,9 +6,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react"; 
+import { z } from "zod"; // NÍVEL 4: Importando o Detector de Metais
 import Input from "../../components/Input";
 import ActionButton from "../../components/ActionButton"; 
 import Footer from "../../components/Footer";
+
+// Definição do Schema de Validação
+const registerSchema = z.object({
+  name: z.string()
+    .min(3, "O NOME DEVE TER PELO MENOS 3 LETRAS.")
+    .max(50, "NOME MUITO LONGO.")
+    .regex(/^[a-zA-ZÀ-ÿ\s.]+$/, "NOME NÃO PODE CONTER SÍMBOLOS OU SCRIPTS."),
+  email: z.string()
+    .email("INSIRA UM E-MAIL VÁLIDO."),
+  password: z.string()
+    .min(8, "A SENHA DEVE TER PELO MENOS 8 CARACTERES.") // Aumentado para maior segurança
+});
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -24,8 +37,12 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError("");
 
-    if (password.length < 6) {
-      setError("A SENHA DEVE TER PELO MENOS 6 CARACTERES.");
+    // --- NÍVEL 4: Validação com Zod ---
+    const validation = registerSchema.safeParse({ name, email, password });
+
+    if (!validation.success) {
+      const firstError = validation.error.issues[0].message;
+      setError(firstError);
       setIsLoading(false);
       return;
     }
@@ -54,10 +71,8 @@ export default function RegisterPage() {
   };
 
   return (
-    /* Ajuste para ocupar toda a tela e manter o footer na base */
     <main className="min-h-screen w-full bg-login-image flex flex-col items-center justify-between font-sans overflow-hidden">
       
-      {/* Centralização Vertical e Horizontal para qualquer monitor */}
       <div className="flex-1 flex items-center justify-center w-full p-4">
         <div className="relative w-full max-w-sm mb-12">
           
@@ -93,7 +108,6 @@ export default function RegisterPage() {
                 placeholder="Ex: Cb. Silva" 
                 value={name} 
                 onChange={(e) => setName(e.target.value)} 
-                required 
               />
 
               <Input 
@@ -102,7 +116,6 @@ export default function RegisterPage() {
                 placeholder="Digite seu e-mail institucional..." 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
-                required 
               />
               
               <Input 
@@ -111,7 +124,6 @@ export default function RegisterPage() {
                 placeholder="Crie uma senha segura..." 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
-                required 
               >
                 <button
                   type="button"
