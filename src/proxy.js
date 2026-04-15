@@ -3,10 +3,8 @@ import { NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-// Configuração da "Memória" do Upstash (Pega as chaves do seu .env automaticamente)
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
-  // Limite: 10 acessos a cada 15 minutos por IP na tela de login
   limiter: Ratelimit.slidingWindow(10, "15 m"),
   analytics: true,
 });
@@ -14,43 +12,41 @@ const ratelimit = new Ratelimit({
 export async function proxy(req) {
   const { pathname } = req.nextUrl;
 
-  // --- NÍVEL 3: BLOQUEIO DE ATAQUE DE FORÇA BRUTA ---
-  // Só aplicamos o limite na rota de login e na tentativa de autenticação
-  if (pathname === "/login" || pathname === "/api/auth/callback/credentials") {
-    const ip = req.ip ?? "127.0.0.1";
-    const { success } = await ratelimit.limit(ip);
-
-    if (!success) {
-      // Se estourar o limite de 10 vezes, ele nem tenta carregar a página
-      return new NextResponse("Muitas tentativas. Seu acesso foi bloqueado temporariamente por seguranca (15 min).", { status: 429 });
-    }
-  }
-
-  // --- NÍVEL 1: PROTEÇÃO DE ROTAS (Seu código original melhorado) ---
-  const token = await getToken({ 
-    req, 
-    secret: process.env.NEXTAUTH_SECRET 
-  });
-
-  // Liberar arquivos internos e API de autenticação
+  // --- AJUSTE 1: LIBERAÇÃO IMEDIATA (Antes de qualquer verificação) ---
+  // Isso garante que o Logout (/api/auth/signout) passe sem o porteiro segurar
   if (
-    pathname.includes("/api/auth") || 
-    pathname.includes("/_next") || 
-    pathname.includes("/assets") ||
+    pathname.startsWith("/api/auth") || 
+    pathname.startsWith("/_next") || 
+    pathname.startsWith("/assets") ||
     pathname === "/favicon.ico"
   ) {
     return NextResponse.next();
   }
 
+  // --- NÍVEL 3: RATE LIMIT ---
+  if (pathname === "/login") {
+    const ip = req.ip ?? "127.0.0.1";
+    const { success } = await ratelimit.limit(ip);
+
+    if (!success) {
+      return new NextResponse("Muitas tentativas. Seu acesso foi bloqueado temporariamente por seguranca (15 min).", { status: 429 });
+    }
+  }
+
+  // --- NÍVEL 1: BUSCA DO TOKEN (Somente após liberar rotas essenciais) ---
+  const token = await getToken({ 
+    req, 
+    secret: process.env.NEXTAUTH_SECRET 
+  });
+
   const publicPaths = ["/login", "/register", "/esqueceu_senha", "/reset_senha"];
   const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
 
-  // Se logado e tentar ir pro login, manda pro dashboard
+  // Lógica de redirecionamento
   if (isPublicPath && token) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  // Se não logado e tentar área restrita, manda pro login
   if (!isPublicPath && !token) {
     const url = new URL("/login", req.url);
     url.searchParams.set("callbackUrl", pathname); 
@@ -61,5 +57,6 @@ export async function proxy(req) {
 }
 
 export const config = {
+  // Ajustamos o matcher para ser mais preciso
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
