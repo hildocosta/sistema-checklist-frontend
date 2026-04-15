@@ -196,6 +196,20 @@ Para garantir a confiabilidade do envio e evitar bloqueios de segurança, o sist
 * **Senhas de Aplicativo:** Camada de segurança do Google que permite que o sistema envie e-mails institucionalmente sem expor a senha principal da conta.
 * **Criptografia TLS/SSL:** Garantia de que os dados do relatório trafegam de forma segura entre a Vercel e os servidores de e-mail.
 
+  ---
+
+## 🛡️ Arquitetura de Segurança (Blindagem de Dados)
+
+Dada a natureza sensível dos dados militares, o sistema implementa 4 níveis de proteção para garantir que apenas operadores autorizados gerenciem a logística.
+
+### 🔐 Níveis de Proteção:
+1. **Nível 1 - Middleware de Rota:** Bloqueio de acesso a checklists e dashboards para usuários não autenticados via servidor.
+2. **Nível 2 - HttpOnly Cookies:** Proteção das credenciais contra ataques de script (XSS), mantendo a sessão segura no navegador.
+3. **Nível 3 - Rate Limit (Upstash Redis):** Camada de proteção que impede o abuso do sistema de envio de e-mails e tentativas de força bruta no login.
+4. **Nível 4 - Validação Zod:** Rigorosa filtragem de dados de entrada, garantindo que nenhum código malicioso seja inserido nos campos de conferência ou cadastro.
+
+---
+
 ### 🔄 Fluxo Operacional Automatizado e Feedback
 1.  **Validação:** O sistema verifica se todos os itens da carga (Armas, Munições, Viaturas) foram conferidos.
 2.  **Geração:** O PDF é gerado em memória (lado do cliente) com o layout oficial do 17º BPM.
@@ -218,9 +232,11 @@ Para garantir a confiabilidade do envio e evitar bloqueios de segurança, o sist
 | :--- | :--- |
 | **Next.js 15** | Framework Estrutural (App Router) |
 | **React 19** | Biblioteca de Interface |
+| **Upstash Redis** | Rate Limit e Segurança de Infraestrutura |
 | **Tailwind CSS** | Design System e Estilização Sênior |
 | **Nodemailer** | Automação de E-mail e Integração SMTP |
 | **jsPDF** | Geração Dinâmica de Relatórios PDF |
+| **Zod** | Validação de Esquemas e Proteção de Inputs |
 | **Lucide React** | Iconografia Vetorial |
 ---
 
