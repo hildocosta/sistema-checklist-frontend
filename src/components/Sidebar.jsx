@@ -3,12 +3,13 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { signOut } from "next-auth/react"; // 1. Importação essencial para deslogar
 import { 
   LayoutGrid, 
   ClipboardList, 
-  Wrench,          
-  Users,           
-  BarChart3,       
+  Wrench,           
+  Users,            
+  BarChart3,        
   User, 
   UserPlus,
   LogOut,
@@ -24,21 +25,27 @@ const menuItems = [
   { name: "Usuários", icon: Users, path: "/dashboard/usuarios" },  
   { name: "Perfil", icon: User, path: "/dashboard/perfil" },
   { name: "Cadastrar", icon: UserPlus, path: "/dashboard/cadastrar" },
- 
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = (e) => {
+  // 2. Função corrigida com signOut
+  const handleLogout = async (e) => {
     e.preventDefault(); 
     setIsLoggingOut(true); 
 
-    setTimeout(() => {
-      router.push("/login");
-    }, 800);
+    try {
+      // O signOut apaga os cookies de sessão e redireciona automaticamente
+      await signOut({ 
+        redirect: true, 
+        callbackUrl: "/login" 
+      });
+    } catch (error) {
+      console.error("Erro ao sair do sistema:", error);
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -71,7 +78,6 @@ export default function Sidebar() {
                   <span className="text-[13px] font-light">{item.name}</span>
                 </div>
                 
-                {/* Setinha que aparece apenas no item ativo */}
                 {isActive && (
                   <ChevronRight size={16} className="text-white/50 animate-in fade-in slide-in-from-left-1" />
                 )}
