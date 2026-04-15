@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/Nodemailer-007ACC?style=for-the-badge&logo=nodemailer&logoColor=white" alt="Nodemailer" />
   <img src="https://img.shields.io/badge/jsPDF-E43937?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="jsPDF" />
   <img src="https://img.shields.io/badge/Lucide_Icons-FF69B4?style=for-the-badge&logo=lucide&logoColor=white" alt="Lucide" />
+  <img src="https://img.shields.io/badge/Security-Level_4-green?style=for-the-badge&logo=dependabot&logoColor=white" alt="Security" />
 </p>
 
 <p align="center">
