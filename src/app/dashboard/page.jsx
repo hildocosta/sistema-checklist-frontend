@@ -8,13 +8,16 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recha
 
 export default function DashboardComando() {
   const [data, setData] = useState(null);
-  const [mounted, setMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
+  // Sincroniza apenas uma vez no carregamento
   useEffect(() => {
-    setMounted(true);
+    setIsClient(true);
+    
     const fetchStats = async () => {
       try {
         const res = await fetch('/api/stats');
+        if (!res.ok) throw new Error("Erro na rede");
         const result = await res.json();
         setData(result);
       } catch (err) {
@@ -27,10 +30,11 @@ export default function DashboardComando() {
     return () => clearInterval(timer);
   }, []);
 
-  if (!data || !mounted) return (
+  // Enquanto não estiver no cliente ou sem dados, mostra o skeleton
+  if (!isClient || !data) return (
     <div className="h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-500 font-bold gap-3 animate-pulse">
       <Shield size={40} className="text-slate-400"/> 
-      <p className="tracking-widest text-xs uppercase">Sincronizando com a Reserva de Armas...</p>
+      <p className="tracking-widest text-[10px] uppercase font-black">Sincronizando com a Reserva de Armas...</p>
     </div>
   );
 
@@ -101,28 +105,29 @@ export default function DashboardComando() {
         />
       </div>
 
-      {/* ÁREA CENTRAL DE GRÁFICOS E LOGS */}
+      {/* ÁREA CENTRAL */}
       <div className="flex-1 grid grid-cols-12 gap-3 min-h-0 overflow-hidden">
         
         {/* GRÁFICO DE PIZZA (PANORAMA) */}
         <div className="col-span-7 bg-white border border-slate-200 rounded-3xl p-6 flex flex-col shadow-sm">
-          <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-6 border-b border-slate-50 pb-3">
+          <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2 border-b border-slate-50 pb-3">
             <BarChart3 size={16} className="text-blue-600" /> Panorama de Disponibilidade de Carga
           </h2>
           <div className="flex-1 min-h-0 relative">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+              <PieChart margin={{ bottom: 30 }}>
                 <Pie 
                   data={data.grafico} 
-                  innerRadius={90} 
-                  outerRadius={125} 
-                  paddingAngle={10} 
+                  innerRadius={85} 
+                  outerRadius={115} 
+                  paddingAngle={8} 
                   dataKey="valor"
                   stroke="none"
+                  cy="45%" 
                 >
                   {data.grafico?.map((entry, i) => (
                     <Cell 
-                      key={i} 
+                      key={`cell-${i}`} 
                       fill={entry.name === 'Disponível' && !data.isPendente ? '#10b981' : entry.fill} 
                       className="transition-all duration-500 hover:opacity-80 outline-none"
                     />
@@ -133,14 +138,16 @@ export default function DashboardComando() {
                 />
                 <Legend 
                    verticalAlign="bottom" 
-                   height={40} 
+                   align="center"
                    iconType="circle"
-                   formatter={(value) => <span className="text-[10px] font-black uppercase text-slate-600 tracking-wider mr-4">{value}</span>}
+                   iconSize={8}
+                   wrapperStyle={{ paddingTop: "25px" }} 
+                   formatter={(value) => <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider px-2">{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
-            {/* Overlay central de porcentagem */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] text-center pointer-events-none">
+            
+            <div className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
                 <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Total</p>
                 <p className="text-4xl font-black text-slate-900 leading-none">
                     {(data.stats?.reserva + data.stats?.emCautela + data.stats?.avarias) || 0}
@@ -149,7 +156,7 @@ export default function DashboardComando() {
           </div>
         </div>
 
-        {/* LISTA DE MOVIMENTAÇÕES (DIREITA) */}
+        {/* MONITORAMENTO (DIREITA) */}
         <div className="col-span-5 bg-white border border-slate-200 rounded-3xl p-6 flex flex-col shadow-sm overflow-hidden">
           <div className="flex justify-between items-center mb-5 shrink-0 border-b border-slate-50 pb-3">
             <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -176,7 +183,7 @@ export default function DashboardComando() {
                   </div>
                   
                   <p className="text-[11px] font-bold text-slate-800 uppercase leading-relaxed bg-white/70 p-3 rounded-xl border border-white/50 shadow-inner italic">
-                    "{log.militar}"
+                    &quot;{log.militar}&quot;
                   </p>
 
                   <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200/50">
