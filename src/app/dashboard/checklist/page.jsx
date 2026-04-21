@@ -27,9 +27,9 @@ export default function ChecklistPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [abaAtiva, setAbaAtiva] = useState("armamento");
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [isUpdateMode, setIsUpdateMode] = useState(false);
   
-  // Ref para impedir que o useEffect de salvamento rode antes da carga de dados
+  // Estados para Persistência e Turno
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
   const dataLoaded = useRef(false);
 
   const totalItens = items.length;
@@ -38,43 +38,37 @@ export default function ChecklistPage() {
 
   const responsavelFormatado = session?.user?.name 
     ? `${session.user.posto || "Sd. QP PM"} ${session.user.name} - RG ${session.user.re || "000.000-0"}`
-    : "CARREGANDO RESPONSÁVEL...";
+    : "1º SGT ANDERSON SILVA - RE 123.456-7";
 
-  // 1. Lógica de Inicialização (CARGA DE DADOS)
+  // Lógica de Inicialização e Verificação de Turno
   useEffect(() => {
     if (sessionStatus === "loading") return;
 
     async function inicializarChecklist() {
       setIsLoading(true);
-      const userId = session?.user?.id || 'anon';
-      
       try {
-        // Tenta buscar do Banco de Dados (API real ou simulação)
         const r = await fetch('/api/checklist/status-turno');
         const data = await r.json().catch(() => ({ exists: false }));
 
         if (data.exists) {
           setItems(data.items);
           setIsUpdateMode(true);
-          toast.success("Retomando conferência do servidor.");
+          toast.success("Retomando conferência do turno atual.");
         } else {
-          // Backup LocalStorage específico por Usuário
-          const savedData = localStorage.getItem(`checklist_backup_${userId}`);
+          const savedData = localStorage.getItem(`checklist_backup_${session?.user?.id || 'anon'}`);
           if (savedData) {
             const parsed = JSON.parse(savedData);
-            const isToday = new Date(parsed.timestamp).toDateString() === new Date().toDateString();
-            
-            if (isToday) {
+            if (new Date(parsed.timestamp).toDateString() === new Date().toDateString()) {
               setItems(parsed.items);
-              toast.info("Progresso local recuperado.");
+              toast.info("Dados recuperados do preenchimento anterior.");
             }
           }
         }
       } catch (e) {
-        console.log("Iniciando novo checklist padrão.");
+        console.log("Iniciando novo checklist.");
       } finally {
-        dataLoaded.current = true; // Libera o salvamento
-        setTimeout(() => setIsLoading(false), 600);
+        dataLoaded.current = true;
+        setTimeout(() => setIsLoading(false), 800);
       }
     }
 
@@ -85,16 +79,14 @@ export default function ChecklistPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [session, sessionStatus]);
 
-  // 2. Lógica de Persistência (SALVAMENTO AUTOMÁTICO)
+  // Salva no LocalStorage sempre que um item mudar
   useEffect(() => {
-    // Só salva se a carga inicial já terminou para não sobrescrever com lista vazia
     if (dataLoaded.current && !isLoading && sessionStatus !== "loading") {
-      const userId = session?.user?.id || 'anon';
       const backup = {
         timestamp: new Date().toISOString(),
         items: items
       };
-      localStorage.setItem(`checklist_backup_${userId}`, JSON.stringify(backup));
+      localStorage.setItem(`checklist_backup_${session?.user?.id || 'anon'}`, JSON.stringify(backup));
     }
   }, [items, isLoading, session, sessionStatus]);
 
@@ -132,9 +124,8 @@ export default function ChecklistPage() {
 
   const handleReset = () => {
     if(confirm("Deseja realmente resetar? Isso apagará o progresso deste turno.")) {
-      const userId = session?.user?.id || 'anon';
       setItems(INVENTARIO_COMPLETO);
-      localStorage.removeItem(`checklist_backup_${userId}`);
+      localStorage.removeItem(`checklist_backup_${session?.user?.id || 'anon'}`);
       setIsUpdateMode(false);
       toast.info("Checklist resetado com sucesso.");
     }
@@ -150,13 +141,13 @@ export default function ChecklistPage() {
   const gerarPDF = async () => {
     if (!isConferenciaCompleta) {
       toast.error("Conferência Incompleta", {
-        description: "Marque todos os itens como conferidos.",
+        description: "Marque todos os itens de TODAS as abas como conferidos.",
         icon: <AlertTriangle className="text-red-500" />,
       });
       return;
     }
 
-    const toastId = toast.loading(isUpdateMode ? "Atualizando..." : "Enviando relatório...");
+    const toastId = toast.loading(isUpdateMode ? "Atualizando prontidão..." : "Gerando e enviando relatório institucional...");
 
     try {
       const doc = new jsPDF();
@@ -165,65 +156,138 @@ export default function ChecklistPage() {
       const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
       const hashValidacao = await gerarHashValidacao(`${responsavelFormatado}-${agora.getTime()}`);
-      const qrCodeDataUrl = await QRCode.toDataURL(`https://sistema-17bpm.vercel.app/validar/${hashValidacao}`);
+      const urlValidacao = `https://sistema-checklist-frontend.vercel.app/validar/${hashValidacao}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(urlValidacao);
 
-      // Cabeçalho institucional
-      doc.setFontSize(10).setFont("helvetica", "bold").text("POLÍCIA MILITAR DO PARANÁ", 105, 15, { align: "center" });
-      doc.setFontSize(9).setFont("helvetica", "normal").text("17º BATALHÃO DE POLÍCIA MILITAR", 105, 22, { align: "center" });
-      doc.setFontSize(12).setFont("helvetica", "bold").text("RELATÓRIO DE CONFERÊNCIA DE CARGA", 105, 35, { align: "center" });
-      
-      doc.setDrawColor(200).line(15, 40, 195, 40);
-      doc.setFontSize(8).text(`Responsável: ${responsavelFormatado}`, 15, 48);
+      // --- Cabeçalho PMPR ---
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("POLÍCIA MILITAR DO PARANÁ", 105, 15, { align: "center" });
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text("6º COMANDO REGIONAL DE POLÍCIA MILITAR", 105, 21, { align: "center" });
+      doc.text("17º BATALHÃO DE POLÍCIA MILITAR", 105, 27, { align: "center" });
+      doc.setFontSize(8);
+      doc.text("QUARTA SEÇÃO - ALMOXARIFADO / FURRIELAÇÃO", 105, 33, { align: "center" });
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("RELATÓRIO DIÁRIO DE CONFERÊNCIA DE CARGA", 105, 45, { align: "center" });
+      doc.setDrawColor(203, 213, 225);
+      doc.line(15, 48, 195, 48);
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Emissão: ${dataFormatada} às ${horaFormatada} ${isUpdateMode ? '(ATUALIZAÇÃO)' : ''}`, 15, 55);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30, 41, 59);
+      doc.text(`Responsável: ${responsavelFormatado}`, 15, 60);
 
-      let currentY = 60;
+      let currentY = 70;
 
       categorias.forEach(categoria => {
         const itensDaCat = items.filter(i => i.cat === categoria.id);
         if (itensDaCat.length === 0) return;
-        if (currentY > 250) { doc.addPage(); currentY = 20; }
+        if (currentY > 240) { doc.addPage(); currentY = 20; }
+
+        doc.setFillColor(37, 99, 235);
+        doc.rect(15, currentY, 2, 8, 'F'); 
+        doc.setFillColor(241, 245, 249); 
+        doc.rect(17, currentY, 178, 8, 'F');
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 41, 59);
+        doc.text(categoria.label.toUpperCase(), 22, currentY + 5.5);
+        doc.setFontSize(7);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`(${itensDaCat.length} ITENS)`, 190, currentY + 5.5, { align: "right" });
+
+        const tableData = itensDaCat.map((item, idx) => [
+          String(idx + 1).padStart(2, '0'),
+          item.qtd,
+          { content: `${item.desc}\nSÉRIE: ${item.serie}`, styles: { fontStyle: 'bold' } },
+          item.pmpr || "---",
+          item.cautela || "DISPONÍVEL",
+          item.pagLivro || "---",
+          "OK" 
+        ]);
 
         autoTable(doc, {
-          startY: currentY,
-          head: [[categoria.label.toUpperCase(), "QTD", "SÉRIE", "PMPR", "OBS"]],
-          body: itensDaCat.map(i => [i.desc, i.qtd, i.serie, i.pmpr || "-", i.cautela || "OK"]),
+          startY: currentY + 10,
+          head: [["ORD", "QTD", "EQUIPAMENTO / ESPECIFICAÇÃO", "PMPR", "OBS", "LIVRO", "CONF."]],
+          body: tableData,
           theme: 'grid',
-          headStyles: { fillColor: [30, 41, 59], fontSize: 8 },
-          styles: { fontSize: 7 }
+          headStyles: { fillColor: [30, 41, 59], fontSize: 7, halign: 'center' },
+          styles: { fontSize: 7, valign: 'middle' },
+          columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 10, halign: 'center' }, 3: { halign: 'center' }, 5: { halign: 'center' }, 6: { textColor: [22, 163, 74], fontStyle: 'bold', halign: 'center' } }
         });
-        currentY = doc.lastAutoTable.finalY + 10;
+        currentY = doc.lastAutoTable.finalY + 15;
       });
 
-      doc.addImage(qrCodeDataUrl, 'PNG', 170, currentY, 25, 25);
+      // Rodapé
+      const pageHeight = doc.internal.pageSize.height;
+      if (currentY > pageHeight - 60) { doc.addPage(); currentY = 30; }
+      doc.setDrawColor(203, 213, 225);
+      doc.line(60, currentY + 20, 150, currentY + 20);
+      doc.setFontSize(8);
+      doc.setTextColor(30, 41, 59);
+      doc.setFont("helvetica", "bold");
+      doc.text("Assinatura do Responsável (Digital)", 105, currentY + 25, { align: "center" });
+      doc.addImage(qrCodeDataUrl, 'PNG', 165, currentY + 10, 25, 25);
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Autenticidade garantida - ID: ${hashValidacao}`, 105, currentY + 30, { align: "center" });
+
+      const pdfBase64 = doc.output('datauristring');
+      const fileName = `Checklist_17BPM_${dataFormatada.replace(/\//g, '-')}${isUpdateMode ? '_REV' : ''}.pdf`;
 
       const response = await fetch('/api/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, responsavel: responsavelFormatado, hash: hashValidacao }),
+        body: JSON.stringify({
+          pdfBase64,
+          fileName,
+          data: dataFormatada,
+          hora: horaFormatada,
+          hash: hashValidacao,
+          responsavel: responsavelFormatado,
+          itens: items,
+          isUpdate: isUpdateMode
+        }),
       });
 
       if (response.ok) {
-        doc.save(`Checklist_17BPM_${dataFormatada}.pdf`);
+        doc.save(fileName);
         setIsUpdateMode(true);
-        toast.success("Relatório processado com sucesso!", { id: toastId });
+        toast.success(isUpdateMode ? "Prontidão atualizada!" : "Relatório enviado com sucesso!", { id: toastId });
+      } else {
+        throw new Error("Erro no servidor");
       }
+
     } catch (error) { 
-      toast.error("Erro ao processar PDF.", { id: toastId }); 
+      console.error(error);
+      toast.error("Erro no processo: " + error.message, { id: toastId }); 
     }
   };
 
   return (
     <div className="animate-in fade-in duration-700 space-y-6 max-w-full mx-auto p-4 flex flex-col relative">
-      <Toaster richColors position="top-right" />
+      <Toaster richColors position="top-right" closeButton />
+      
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
       
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 shrink-0">
         <div>
           <Breadcrumb itemAtual="Checklist Diário" />
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-700">Furrielação: Gestão de Carga</h1>
+            <h1 className="text-xl font-bold text-slate-700 tracking-tight">Furrielação: Gestão de Carga</h1>
             {isUpdateMode && (
-              <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                SESSÃO ATIVA
+              <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                ONLINE / TURNO ATIVO
               </span>
             )}
           </div>
@@ -242,61 +306,81 @@ export default function ChecklistPage() {
       {/* Progress Bar */}
       <div className="bg-white px-4 py-3 rounded-xl border border-slate-100 shadow-sm">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Progresso</span>
-            <span className="text-sm font-black text-blue-600">{porcentagemProgresso}%</span>
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progresso</span>
+            <span className="text-sm font-black text-blue-600 w-8">{porcentagemProgresso}%</span>
           </div>
-          <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
             <div 
-              className={`h-full transition-all duration-500 ${porcentagemProgresso === 100 ? 'bg-emerald-500' : 'bg-blue-600'}`}
+              className={`h-full transition-all duration-1000 ease-in-out ${porcentagemProgresso === 100 ? 'bg-emerald-500' : 'bg-blue-600'}`}
               style={{ width: `${porcentagemProgresso}%` }}
             />
           </div>
-          <div className="text-[10px] font-bold text-slate-400">
-            {itensConcluidos} / {totalItens} ITENS
+          <div className="shrink-0 text-[10px] font-bold text-slate-400">
+            {itensConcluidos} / {totalItens} <span className="hidden sm:inline">ITENS</span>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto no-scrollbar">
-        <div className="flex flex-row gap-1">
-          {categorias.map((cat) => {
-            const Icon = cat.icon;
-            const pendencias = getPendencias(cat.id);
-            const isActive = abaAtiva === cat.id;
+      {/* Categorias / Tabs */}
+      <div className="bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200 w-full overflow-hidden">
+        <div className="flex flex-row gap-1 w-full overflow-x-auto no-scrollbar">
+          {categorias.map((categoria) => {
+            const Icon = categoria.icon;
+            const pendencias = getPendencias(categoria.id);
+            const isActive = abaAtiva === categoria.id;
+            
             return (
               <button
-                key={cat.id}
-                onClick={() => setAbaAtiva(cat.id)}
-                className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[10px] font-bold uppercase transition-all
-                  ${isActive ? "bg-white text-blue-600 shadow-sm border border-blue-100" : "text-slate-400 hover:bg-white/50"}`}
+                key={categoria.id}
+                onClick={() => setAbaAtiva(categoria.id)}
+                className={`
+                  flex-1 flex shrink-0 items-center justify-center gap-2 px-3 py-2.5 rounded-xl
+                  text-[10px] font-bold uppercase tracking-tight transition-all duration-200
+                  ${isActive 
+                    ? "bg-white text-blue-600 shadow-md border border-blue-100" 
+                    : "text-slate-400 hover:text-slate-600 hover:bg-white/40"}
+                `}
               >
-                <Icon size={14} />
-                {cat.label}
-                {pendencias > 0 && <span className="ml-1 bg-amber-500 text-white px-1.5 py-0.5 rounded-full text-[9px]">{pendencias}</span>}
+                <Icon size={14} className={isActive ? "text-blue-600" : "text-slate-400"} />
+                <span className="whitespace-nowrap">{categoria.label}</span>
+                {pendencias > 0 && (
+                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[9px] ${isActive ? 'bg-blue-600 text-white' : 'bg-amber-500 text-white'}`}>
+                    {pendencias}
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Tabela de Itens */}
-      <div className="border border-slate-100 bg-white shadow-sm rounded-2xl overflow-x-auto min-h-[400px]">
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-6 right-4 z-[100] p-2 rounded-lg bg-blue-600/80 text-white shadow-lg backdrop-blur-sm transition-all duration-300 hover:bg-blue-600 active:scale-90 border border-white/20 ${
+          showBackToTop ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-75 pointer-events-none"
+        }`}
+      >
+        <ChevronUp size={18} strokeWidth={3} />
+      </button>
+
+      {/* Table */}
+      <div className="border border-slate-100 bg-white shadow-sm overflow-x-auto rounded-2xl min-h-[450px]">
         {isLoading ? (
-          <div className="p-6 space-y-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+          <div className="bg-white p-6 space-y-4 rounded-2xl">
+            {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
           </div>
         ) : (
-          <table className="w-full table-fixed" style={{ minWidth: '850px' }}>
+         <table className="w-full border-collapse table-fixed" style={{ minWidth: '900px' }}>
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="p-4 text-[10px] text-slate-400 text-left w-[60px]">ORD</th>
-                <th className="p-4 text-[10px] text-slate-400 text-center w-[60px]">QTD</th>
-                <th className="p-4 text-[10px] text-slate-400 text-left">EQUIPAMENTO / SÉRIE</th>
-                <th className="p-4 text-[10px] text-slate-400 text-center w-[120px]">PMPR</th>
-                <th className="p-4 text-[10px] text-slate-400 text-left">OBSERVAÇÕES</th>
-                <th className="p-4 text-[10px] text-slate-400 text-right w-[100px]">STATUS</th>
+              <tr className="border-b border-slate-50 bg-slate-50/90 backdrop-blur-sm">
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[5%] text-left">Ord</th>
+                <th className="px-2 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[5%] text-center">Qnt</th>
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[25%] text-left">Equipamento / Série</th>
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[15%] text-center">Nº PMPR</th>
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[30%] text-left">Cautela / Observações</th>
+                <th className="px-2 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[8%] text-center">Livro/Pág</th>
+                <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[12%] text-right">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -313,30 +397,29 @@ export default function ChecklistPage() {
         )}
       </div>
 
-      {/* Botão de Voltar ao Topo */}
-      <button
-        onClick={scrollToTop}
-        className={`fixed bottom-6 right-6 p-3 rounded-full bg-blue-600 text-white shadow-xl transition-all ${showBackToTop ? "scale-100 opacity-100" : "scale-0 opacity-0"}`}
-      >
-        <ChevronUp size={20} />
-      </button>
-
-      {/* Rodapé fixo de ação */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-slate-50 rounded-lg text-slate-400"><Save size={20} /></div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase">Responsável Atual</p>
+      {/* Footer Info & Action */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-100 flex flex-col md:flex-row justify-between items-center shadow-sm gap-6 shrink-0">
+        <div className="flex gap-4 items-center">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors border ${isConferenciaCompleta ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-blue-50 text-blue-500 border-blue-100'}`}>
+             <Save size={24} />
+          </div>
+          <div className="text-left">
+            <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Responsável Turno</p>
             <p className="text-sm font-semibold text-slate-600 italic">{responsavelFormatado}</p>
           </div>
         </div>
+
         <ActionButton 
-          icon={isConferenciaCompleta ? CheckCircle2 : AlertTriangle}
-          label={isConferenciaCompleta ? "Finalizar Conferência" : "Aguardando Itens..."}
-          onClick={gerarPDF}
+          icon={isUpdateMode ? CheckCircle2 : (isConferenciaCompleta ? CheckCircle2 : AlertTriangle)}
+          label={
+            isUpdateMode 
+            ? "Atualizar Prontidão Online" 
+            : (isConferenciaCompleta ? "Finalizar Conferência Geral" : "Pendências em Aberto...")
+          }
+          onClick={() => isConferenciaCompleta ? gerarPDF() : toast.error("Existem itens não conferidos.")}
           disabled={!isConferenciaCompleta}
-          variant={isConferenciaCompleta ? "success" : "disabled"}
-          className="w-full md:w-auto px-12 h-12"
+          variant={isUpdateMode ? "primary" : (isConferenciaCompleta ? "success" : "disabled")}
+          className="h-12 lg:h-14 px-10"
         />
       </div>
     </div>
@@ -348,33 +431,46 @@ function RowChecklist({ item, onToggle, onUpdate }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const filteredEfetivo = useMemo(() => {
-    if (!searchTerm || searchTerm.length < 2) return [];
+    if (!searchTerm) return [];
     return EFETIVO_17BPM.filter(m => 
-      m.nome.toLowerCase().includes(searchTerm.toLowerCase()) || m.re.includes(searchTerm)
-    ).slice(0, 5);
+        m.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        m.re.includes(searchTerm)
+      ).slice(0, 5);
   }, [searchTerm]);
 
   return (
-    <tr className={`hover:bg-slate-50/50 transition-colors ${item.status === 'ok' ? 'bg-emerald-50/10' : ''}`}>
-      <td className="p-4 text-xs font-bold text-slate-300">#{item.id}</td>
-      <td className="p-4 text-center">
-        <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">{item.qtd}</span>
-      </td>
-      <td className="p-4">
-        <div className="flex flex-col">
-          <span className="text-xs font-bold text-slate-700">{item.desc}</span>
-          <span className="text-[10px] font-mono text-blue-500">SN: {item.serie}</span>
+    <tr className={`transition-all duration-300 ${item.status === 'ok' ? 'bg-emerald-50/20' : 'hover:bg-slate-50/50'}`}>
+      <td className="px-4 py-4 text-xs font-semibold text-slate-400">#{String(item.id).padStart(2, '0')}</td>
+      <td className="px-2 py-4 text-center">
+        <div className="inline-flex items-center justify-center w-8 h-8 bg-slate-50 rounded-lg text-[10px] font-bold text-slate-400 border border-slate-200">
+          {item.qtd}
         </div>
       </td>
-      <td className="p-4 text-center">
-        <span className="text-[10px] font-mono font-bold border rounded px-2 py-1">{item.pmpr || "---"}</span>
+      <td className="px-4 py-4">
+        <div className="flex flex-col text-left">
+          <span className="text-[11px] font-bold text-slate-700 leading-tight mb-1 break-words">{item.desc}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">SÉRIE:</span>
+            <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 leading-none">
+              {item.serie}
+            </span>
+          </div>
+        </div>
       </td>
-      <td className="p-4">
-        <div className="relative">
+      <td className="px-4 py-4 text-center">
+        <span className="bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg font-mono text-xs font-bold border border-slate-200 whitespace-nowrap inline-block">
+          {item.pmpr || "---"}
+        </span>
+      </td>
+      <td className="px-4 py-4 overflow-visible">
+        <div className="relative w-full">
+          <div className={`absolute left-3 top-1/2 -translate-y-1/2 ${searchTerm ? 'text-blue-400' : 'text-slate-300'}`}>
+            <Search size={14} />
+          </div>
           <input 
             type="text"
-            value={searchTerm}
             placeholder="Militar ou Obs..."
+            value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setShowDropdown(true);
@@ -382,34 +478,49 @@ function RowChecklist({ item, onToggle, onUpdate }) {
             }}
             onFocus={() => setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-            className="w-full pl-3 pr-3 py-1.5 border rounded-lg text-xs outline-none focus:border-blue-300"
+            className={`w-full pl-9 pr-3 py-2 border rounded-xl text-xs font-medium transition-all outline-none 
+              ${searchTerm ? 'bg-white border-blue-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400 italic'}`}
           />
           {showDropdown && filteredEfetivo.length > 0 && (
-            <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl overflow-hidden">
+            <div className="absolute w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden" style={{ zIndex: 100 }}>
               {filteredEfetivo.map(m => (
                 <button 
-                  key={m.id}
+                  key={m.id} 
                   onMouseDown={() => {
                     const val = `${m.nome} (${m.re})`;
                     setSearchTerm(val);
                     onUpdate({ cautela: val });
                     setShowDropdown(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-[11px] hover:bg-blue-50 flex justify-between"
+                  }} 
+                  className="w-full px-3 py-2 text-left hover:bg-blue-50 text-xs font-medium text-slate-600 flex justify-between border-b border-slate-50 last:border-0"
                 >
-                  {m.nome} <span className="text-slate-400">RG {m.re}</span>
+                  {m.nome} <span className="text-slate-400 font-mono text-[10px]">RG {m.re}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
       </td>
-      <td className="p-4 text-right">
+      <td className="px-2 py-4 text-center">
+        <div className="relative w-14 mx-auto">
+          <BookOpen size={12} className={`absolute left-1 top-1/2 -translate-y-1/2 ${item.pagLivro ? 'text-blue-400' : 'text-slate-300'}`} />
+          <input 
+            type="text" value={item.pagLivro || ""} placeholder="-"
+            onChange={(e) => onUpdate({ pagLivro: e.target.value })}
+            className="w-full pl-5 pr-1 py-1.5 bg-transparent border-b border-slate-100 text-xs font-bold text-slate-600 outline-none text-center"
+          />
+        </div>
+      </td>
+      <td className="px-4 py-4 text-right">
         <button 
-          onClick={onToggle}
-          className={`p-2 rounded-lg transition-all ${item.status === 'ok' ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-100 text-slate-300 hover:text-emerald-500'}`}
+          onClick={onToggle} 
+          className={`p-1.5 rounded-lg border transition-all ${
+            item.status === 'ok' 
+            ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm' 
+            : 'bg-white border-slate-200 text-slate-200 hover:text-emerald-400 hover:border-emerald-200'
+          }`}
         >
-          <ClipboardCheck size={20} />
+          <ClipboardCheck size={18} strokeWidth={2} />
         </button>
       </td>
     </tr>
