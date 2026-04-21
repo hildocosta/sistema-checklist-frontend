@@ -10,10 +10,8 @@ export default function DashboardComando() {
   const [data, setData] = useState(null);
   const [isClient, setIsClient] = useState(false);
 
-  // Sincroniza apenas uma vez no carregamento
   useEffect(() => {
     setIsClient(true);
-    
     const fetchStats = async () => {
       try {
         const res = await fetch('/api/stats');
@@ -30,7 +28,6 @@ export default function DashboardComando() {
     return () => clearInterval(timer);
   }, []);
 
-  // Enquanto não estiver no cliente ou sem dados, mostra o skeleton
   if (!isClient || !data) return (
     <div className="h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-500 font-bold gap-3 animate-pulse">
       <Shield size={40} className="text-slate-400"/> 
@@ -73,36 +70,10 @@ export default function DashboardComando() {
 
       {/* CARDS DE ESTATÍSTICAS (KPIs) */}
       <div className="grid grid-cols-4 gap-3 shrink-0">
-        <StatCard 
-          label="Status Conferência" 
-          value={data.stats?.aderencia} 
-          sub={data.isPendente ? "AGUARDANDO ENVIO" : `CONCLUÍDO ÀS ${data.ultimoChecklist?.hora}`} 
-          color={data.isPendente ? "text-red-600" : "text-emerald-600"} 
-          icon={<Clock size={20}/>} 
-          alert={data.isPendente} 
-        />
-        <StatCard 
-          label="DISPONÍVEL / RESERVA" 
-          value={data.stats?.reserva} 
-          sub="EM ESTOQUE / PRONTO" 
-          color="text-emerald-600" 
-          icon={<HardDrive size={20} className="text-emerald-500"/>} 
-        />
-        <StatCard 
-          label="CAUTELADO / SERVIÇO" 
-          value={data.stats?.emCautela} 
-          sub="POSSE DE EFETIVO" 
-          color="text-sky-700" 
-          icon={<User size={20} className="text-sky-600"/>} 
-        />
-        <StatCard 
-          label="AVARIAS / EXTRAVIOS" 
-          value={data.stats?.avarias} 
-          sub="CRÍTICOS / MANUTENÇÃO" 
-          color={data.stats?.avarias > 0 ? "text-red-600" : "text-slate-400"} 
-          icon={<AlertTriangle size={20} className={data.stats?.avarias > 0 ? "text-red-500" : "text-slate-300"}/>} 
-          alert={data.stats?.avarias > 0} 
-        />
+        <StatCard label="Status Conferência" value={data.stats?.aderencia} sub={data.isPendente ? "AGUARDANDO ENVIO" : `CONCLUÍDO ÀS ${data.ultimoChecklist?.hora}`} color={data.isPendente ? "text-red-600" : "text-emerald-600"} icon={<Clock size={20}/>} alert={data.isPendente} />
+        <StatCard label="DISPONÍVEL / RESERVA" value={data.stats?.reserva} sub="EM ESTOQUE / PRONTO" color="text-emerald-600" icon={<HardDrive size={20} className="text-emerald-500"/>} />
+        <StatCard label="CAUTELADO / SERVIÇO" value={data.stats?.emCautela} sub="POSSE DE EFETIVO" color="text-sky-700" icon={<User size={20} className="text-sky-600"/>} />
+        <StatCard label="AVARIAS / EXTRAVIOS" value={data.stats?.avarias} sub="CRÍTICOS / MANUTENÇÃO" color={data.stats?.avarias > 0 ? "text-red-600" : "text-slate-400"} icon={<AlertTriangle size={20} className={data.stats?.avarias > 0 ? "text-red-500" : "text-slate-300"}/>} alert={data.stats?.avarias > 0} />
       </div>
 
       {/* ÁREA CENTRAL */}
@@ -113,17 +84,17 @@ export default function DashboardComando() {
           <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2 border-b border-slate-50 pb-3">
             <BarChart3 size={16} className="text-blue-600" /> Panorama de Disponibilidade de Carga
           </h2>
-          <div className="flex-1 min-h-0 relative">
+          <div className="flex-1 min-h-0 relative flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart margin={{ bottom: 30 }}>
+              <PieChart margin={{ top: 10, bottom: 10 }}>
                 <Pie 
                   data={data.grafico} 
-                  innerRadius={85} 
-                  outerRadius={115} 
+                  innerRadius="65%" 
+                  outerRadius="85%" 
                   paddingAngle={8} 
                   dataKey="valor"
                   stroke="none"
-                  cy="45%" 
+                  // cy="50%" -> Removido o cy personalizado para centralizar automaticamente
                 >
                   {data.grafico?.map((entry, i) => (
                     <Cell 
@@ -141,13 +112,14 @@ export default function DashboardComando() {
                    align="center"
                    iconType="circle"
                    iconSize={8}
-                   wrapperStyle={{ paddingTop: "25px" }} 
+                   wrapperStyle={{ position: 'relative', paddingTop: '20px' }} 
                    formatter={(value) => <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider px-2">{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
             
-            <div className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+            {/* Overlay central de porcentagem */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%+15px)] text-center pointer-events-none">
                 <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Total</p>
                 <p className="text-4xl font-black text-slate-900 leading-none">
                     {(data.stats?.reserva + data.stats?.emCautela + data.stats?.avarias) || 0}
