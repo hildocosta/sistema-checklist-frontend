@@ -5,7 +5,7 @@ import {
   ClipboardCheck, Printer, Save, 
   Search, BookOpen, AlertTriangle,
   RotateCcw, CheckCircle2, ShieldCheck,
-  Zap, Package, Radio, CarFront,PlugZap, Layers, Smartphone,
+  Zap, Package, Radio, CarFront, PlugZap, Layers, Smartphone,
   ChevronUp 
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -14,9 +14,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode"; 
 
-
 import { INVENTARIO_COMPLETO, EFETIVO_17BPM } from "../../../data/inventario/index";
-
 
 import Breadcrumb from "../../../components/Breadcrumb";
 import ActionButton from "../../../components/ActionButton";
@@ -29,30 +27,69 @@ export default function ChecklistPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [abaAtiva, setAbaAtiva] = useState("armamento");
   const [showBackToTop, setShowBackToTop] = useState(false);
+  
+  // Estados para Persistência e Turno
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [lastSavedHash, setLastSavedHash] = useState(null);
 
- 
   const totalItens = items.length;
   const itensConcluidos = items.filter(i => i.status === "ok").length;
   const porcentagemProgresso = totalItens > 0 ? Math.round((itensConcluidos / totalItens) * 100) : 0;
 
-  
   const responsavelFormatado = session?.user?.name 
     ? `${session.user.posto || "Sd. QP PM"} ${session.user.name} - RG ${session.user.re || "000.000-0"}`
     : "1º SGT ANDERSON SILVA - RE 123.456-7";
 
+  // Lógica de Inicialização e Verificação de Turno
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200);
-    
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 300);
-    };
+    async function inicializarChecklist() {
+      setIsLoading(true);
+      try {
+        // 1. Tenta buscar do Banco de Dados (Simulação por enquanto)
+        // No futuro: const res = await fetch('/api/checklist/current-shift');
+        const r = await fetch('/api/checklist/status-turno'); // Exemplo de endpoint
+        const data = await r.json().catch(() => ({ exists: false }));
 
+        if (data.exists) {
+          setItems(data.items);
+          setIsUpdateMode(true);
+          toast.success("Retomando conferência do turno atual.");
+        } else {
+          // 2. Se não tem no banco, checa LocalStorage (Backup de preenchimento)
+          const savedData = localStorage.getItem(`checklist_backup_${session?.user?.id || 'anon'}`);
+          if (savedData) {
+            const parsed = JSON.parse(savedData);
+            // Verifica se o backup é de hoje (evita carregar lixo de dias atrás)
+            if (new Date(parsed.timestamp).toDateString() === new Date().toDateString()) {
+              setItems(parsed.items);
+              toast.info("Dados recuperados do preenchimento anterior.");
+            }
+          }
+        }
+      } catch (e) {
+        console.log("Iniciando novo checklist.");
+      } finally {
+        setTimeout(() => setIsLoading(false), 800);
+      }
+    }
+
+    inicializarChecklist();
+
+    const handleScroll = () => setShowBackToTop(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [session]);
+
+  // Salva no LocalStorage sempre que um item mudar (Segurança do operador)
+  useEffect(() => {
+    if (!isLoading) {
+      const backup = {
+        timestamp: new Date().toISOString(),
+        items: items
+      };
+      localStorage.setItem(`checklist_backup_${session?.user?.id || 'anon'}`, JSON.stringify(backup));
+    }
+  }, [items, isLoading, session]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -87,8 +124,12 @@ export default function ChecklistPage() {
   };
 
   const handleReset = () => {
-    setItems(INVENTARIO_COMPLETO);
-    toast.info("Checklist resetado com sucesso.");
+    if(confirm("Deseja realmente resetar? Isso apagará o progresso deste turno.")) {
+      setItems(INVENTARIO_COMPLETO);
+      localStorage.removeItem(`checklist_backup_${session?.user?.id || 'anon'}`);
+      setIsUpdateMode(false);
+      toast.info("Checklist resetado com sucesso.");
+    }
   };
 
   const gerarHashValidacao = async (dados) => {
@@ -107,7 +148,7 @@ export default function ChecklistPage() {
       return;
     }
 
-    const toastId = toast.loading("Gerando e enviando relatório institucional...");
+    const toastId = toast.loading(isUpdateMode ? "Atualizando prontidão..." : "Gerando e enviando relatório institucional...");
 
     try {
       const doc = new jsPDF();
@@ -119,30 +160,26 @@ export default function ChecklistPage() {
       const urlValidacao = `https://sistema-checklist-frontend.vercel.app/validar/${hashValidacao}`;
       const qrCodeDataUrl = await QRCode.toDataURL(urlValidacao);
 
+      // --- Cabeçalho PMPR ---
       doc.setTextColor(30, 41, 59);
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.text("POLÍCIA MILITAR DO PARANÁ", 105, 15, { align: "center" });
-      
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.text("6º COMANDO REGIONAL DE POLÍCIA MILITAR", 105, 21, { align: "center" });
       doc.text("17º BATALHÃO DE POLÍCIA MILITAR", 105, 27, { align: "center" });
-      
       doc.setFontSize(8);
       doc.text("QUARTA SEÇÃO - ALMOXARIFADO / FURRIELAÇÃO", 105, 33, { align: "center" });
-      
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
       doc.text("RELATÓRIO DIÁRIO DE CONFERÊNCIA DE CARGA", 105, 45, { align: "center" });
-
       doc.setDrawColor(203, 213, 225);
       doc.line(15, 48, 195, 48);
-
       doc.setTextColor(100, 116, 139);
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
-      doc.text(`Emissão: ${dataFormatada} às ${horaFormatada}`, 15, 55);
+      doc.text(`Emissão: ${dataFormatada} às ${horaFormatada} ${isUpdateMode ? '(ATUALIZAÇÃO)' : ''}`, 15, 55);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 41, 59);
       doc.text(`Responsável: ${responsavelFormatado}`, 15, 60);
@@ -152,23 +189,16 @@ export default function ChecklistPage() {
       categorias.forEach(categoria => {
         const itensDaCat = items.filter(i => i.cat === categoria.id);
         if (itensDaCat.length === 0) return;
-
-        if (currentY > 240) {
-            doc.addPage();
-            currentY = 20;
-        }
+        if (currentY > 240) { doc.addPage(); currentY = 20; }
 
         doc.setFillColor(37, 99, 235);
         doc.rect(15, currentY, 2, 8, 'F'); 
-        
         doc.setFillColor(241, 245, 249); 
         doc.rect(17, currentY, 178, 8, 'F');
-
         doc.setFontSize(9);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(30, 41, 59);
         doc.text(categoria.label.toUpperCase(), 22, currentY + 5.5);
-        
         doc.setFontSize(7);
         doc.setTextColor(100, 116, 139);
         doc.text(`(${itensDaCat.length} ITENS)`, 190, currentY + 5.5, { align: "right" });
@@ -190,40 +220,29 @@ export default function ChecklistPage() {
           theme: 'grid',
           headStyles: { fillColor: [30, 41, 59], fontSize: 7, halign: 'center' },
           styles: { fontSize: 7, valign: 'middle' },
-          columnStyles: { 
-            0: { cellWidth: 10, halign: 'center' }, 
-            1: { cellWidth: 10, halign: 'center' }, 
-            3: { halign: 'center' },
-            5: { halign: 'center' },
-            6: { textColor: [22, 163, 74], fontStyle: 'bold', halign: 'center' } 
-          }
+          columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 10, halign: 'center' }, 3: { halign: 'center' }, 5: { halign: 'center' }, 6: { textColor: [22, 163, 74], fontStyle: 'bold', halign: 'center' } }
         });
-
         currentY = doc.lastAutoTable.finalY + 15;
       });
 
+      // Rodapé
       const pageHeight = doc.internal.pageSize.height;
-      if (currentY > pageHeight - 60) {
-        doc.addPage();
-        currentY = 30;
-      }
-
+      if (currentY > pageHeight - 60) { doc.addPage(); currentY = 30; }
       doc.setDrawColor(203, 213, 225);
       doc.line(60, currentY + 20, 150, currentY + 20);
       doc.setFontSize(8);
       doc.setTextColor(30, 41, 59);
       doc.setFont("helvetica", "bold");
       doc.text("Assinatura do Responsável (Digital)", 105, currentY + 25, { align: "center" });
-      
       doc.addImage(qrCodeDataUrl, 'PNG', 165, currentY + 10, 25, 25);
-      doc.setFont("helvetica", "italic");
       doc.setFontSize(7);
       doc.setTextColor(148, 163, 184);
-      doc.text(`Autenticidade garantida via sistema - ID: ${hashValidacao}`, 105, currentY + 30, { align: "center" });
+      doc.text(`Autenticidade garantida - ID: ${hashValidacao}`, 105, currentY + 30, { align: "center" });
 
       const pdfBase64 = doc.output('datauristring');
-      const fileName = `Checklist_17BPM_${dataFormatada.replace(/\//g, '-')}.pdf`;
+      const fileName = `Checklist_17BPM_${dataFormatada.replace(/\//g, '-')}${isUpdateMode ? '_REV' : ''}.pdf`;
 
+      // Envio para API
       const response = await fetch('/api/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -234,16 +253,17 @@ export default function ChecklistPage() {
           hora: horaFormatada,
           hash: hashValidacao,
           responsavel: responsavelFormatado,
-          itens: items
+          itens: items,
+          isUpdate: isUpdateMode
         }),
       });
 
       if (response.ok) {
         doc.save(fileName);
-        toast.success("Relatório enviado e baixado com sucesso!", { id: toastId });
+        setIsUpdateMode(true); // Após o primeiro envio, entra em modo atualização
+        toast.success(isUpdateMode ? "Prontidão atualizada!" : "Relatório enviado com sucesso!", { id: toastId });
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erro no servidor");
+        throw new Error("Erro no servidor");
       }
 
     } catch (error) { 
@@ -261,40 +281,50 @@ export default function ChecklistPage() {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
       
-      
+      {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 shrink-0">
         <div>
           <Breadcrumb itemAtual="Checklist Diário" />
-          <h1 className="text-xl font-bold text-slate-700 tracking-tight">Furrielação: Gestão de Carga</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-700 tracking-tight">Furrielação: Gestão de Carga</h1>
+            {isUpdateMode && (
+              <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                ONLINE / TURNO ATIVO
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           <ActionButton icon={RotateCcw} label="Resetar" onClick={handleReset} variant="outline" />
-          <SecondaryButton icon={Printer} label="Gerar & Enviar" onClick={gerarPDF} disabled={!isConferenciaCompleta} />
+          <SecondaryButton 
+            icon={isUpdateMode ? Save : Printer} 
+            label={isUpdateMode ? "Atualizar" : "Gerar & Enviar"} 
+            onClick={gerarPDF} 
+            disabled={!isConferenciaCompleta} 
+          />
         </div>
       </div>
 
-      
+      {/* Progress Bar */}
       <div className="bg-white px-4 py-3 rounded-xl border border-slate-100 shadow-sm">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 shrink-0">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progresso</span>
             <span className="text-sm font-black text-blue-600 w-8">{porcentagemProgresso}%</span>
           </div>
-          
           <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
             <div 
               className={`h-full transition-all duration-1000 ease-in-out ${porcentagemProgresso === 100 ? 'bg-emerald-500' : 'bg-blue-600'}`}
               style={{ width: `${porcentagemProgresso}%` }}
             />
           </div>
-
           <div className="shrink-0 text-[10px] font-bold text-slate-400">
             {itensConcluidos} / {totalItens} <span className="hidden sm:inline">ITENS</span>
           </div>
         </div>
       </div>
 
-    
+      {/* Categorias / Tabs */}
       <div className="bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200 w-full overflow-hidden">
         <div className="flex flex-row gap-1 w-full overflow-x-auto no-scrollbar">
           {categorias.map((categoria) => {
@@ -317,10 +347,7 @@ export default function ChecklistPage() {
                 <Icon size={14} className={isActive ? "text-blue-600" : "text-slate-400"} />
                 <span className="whitespace-nowrap">{categoria.label}</span>
                 {pendencias > 0 && (
-                  <span className={`
-                    ml-1 px-1.5 py-0.5 rounded-full text-[9px]
-                    ${isActive ? 'bg-blue-600 text-white' : 'bg-amber-500 text-white'}
-                  `}>
+                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[9px] ${isActive ? 'bg-blue-600 text-white' : 'bg-amber-500 text-white'}`}>
                     {pendencias}
                   </span>
                 )}
@@ -330,26 +357,23 @@ export default function ChecklistPage() {
         </div>
       </div>
 
-     
       <button
         onClick={scrollToTop}
         className={`fixed bottom-6 right-4 z-[100] p-2 rounded-lg bg-blue-600/80 text-white shadow-lg backdrop-blur-sm transition-all duration-300 hover:bg-blue-600 active:scale-90 border border-white/20 ${
           showBackToTop ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-75 pointer-events-none"
         }`}
-        title="Voltar ao topo"
       >
         <ChevronUp size={18} strokeWidth={3} />
       </button>
 
-   
+      {/* Table */}
       <div className="border border-slate-100 bg-white shadow-sm overflow-x-auto rounded-2xl min-h-[450px]">
         {isLoading ? (
           <div className="bg-white p-6 space-y-4 rounded-2xl">
             {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
           </div>
         ) : (
-         <table  className="w-full border-collapse table-fixed"  style={{ minWidth: '900px' }}
->
+         <table className="w-full border-collapse table-fixed" style={{ minWidth: '900px' }}>
             <thead>
               <tr className="border-b border-slate-50 bg-slate-50/90 backdrop-blur-sm">
                 <th className="px-4 py-4 text-[10px] font-semibold uppercase text-slate-400 w-[5%] text-left">Ord</th>
@@ -375,7 +399,7 @@ export default function ChecklistPage() {
         )}
       </div>
 
-     
+      {/* Footer Info & Action */}
       <div className="bg-white p-5 rounded-3xl border border-slate-100 flex flex-col md:flex-row justify-between items-center shadow-sm gap-6 shrink-0">
         <div className="flex gap-4 items-center">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors border ${isConferenciaCompleta ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-blue-50 text-blue-500 border-blue-100'}`}>
@@ -388,11 +412,15 @@ export default function ChecklistPage() {
         </div>
 
         <ActionButton 
-          icon={isConferenciaCompleta ? CheckCircle2 : AlertTriangle}
-          label={isConferenciaCompleta ? "Finalizar Conferência Geral" : "Pendências em Aberto..."}
+          icon={isUpdateMode ? CheckCircle2 : (isConferenciaCompleta ? CheckCircle2 : AlertTriangle)}
+          label={
+            isUpdateMode 
+            ? "Atualizar Prontidão Online" 
+            : (isConferenciaCompleta ? "Finalizar Conferência Geral" : "Pendências em Aberto...")
+          }
           onClick={() => isConferenciaCompleta ? gerarPDF() : toast.error("Existem itens não conferidos.")}
           disabled={!isConferenciaCompleta}
-          variant={isConferenciaCompleta ? "success" : "disabled"}
+          variant={isUpdateMode ? "primary" : (isConferenciaCompleta ? "success" : "disabled")}
           className="h-12 lg:h-14 px-10"
         />
       </div>
@@ -456,10 +484,7 @@ function RowChecklist({ item, onToggle, onUpdate }) {
               ${searchTerm ? 'bg-white border-blue-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400 italic'}`}
           />
           {showDropdown && filteredEfetivo.length > 0 && (
-            <div 
-  className="absolute w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden"
-  style={{ zIndex: 100 }}
->
+            <div className="absolute w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden" style={{ zIndex: 100 }}>
               {filteredEfetivo.map(m => (
                 <button 
                   key={m.id} 

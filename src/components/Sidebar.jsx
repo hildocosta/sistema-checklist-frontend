@@ -1,13 +1,11 @@
 "use client";
 import { useState } from "react"; 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { signOut } from "next-auth/react"; // 1. Importação essencial para deslogar
+import { signOut } from "next-auth/react";
 import { 
-  LayoutGrid, 
-  ClipboardList, 
-  Wrench,           
+  LayoutGrid,  
   Users,            
   BarChart3,        
   User, 
@@ -31,7 +29,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // 2. Função corrigida com signOut
+  // 2. Função com signOut
   const handleLogout = async (e) => {
     e.preventDefault(); 
     setIsLoggingOut(true); 
